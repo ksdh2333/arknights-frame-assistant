@@ -1,7 +1,8 @@
-
-ai_rule.md
-old_test_list/
-屏幕位置/
 *.exe
 nul
 backup/
+ahk_docs
+other/
+.worktrees/
+.claude/
+CLAUDE.md
