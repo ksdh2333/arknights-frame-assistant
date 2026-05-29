@@ -645,6 +645,25 @@ class VersionChecker {
         }
     }
 
+    ; 获取并缓存全部 changelog 数据（不进行版本比较）
+    ; 用于首次启动 / 从旧版本升级时生成 changelog.json
+    static FetchChangelogCache() {
+        useGitHubToken := Config.GetImportant("UseGitHubToken")
+        gitHubToken := ""
+        if (useGitHubToken == 1)
+            gitHubToken := Config.GetImportant("GitHubToken")
+
+        this._Log("========== 获取 Changelog 缓存 ==========")
+        releases := this._FetchAllReleases(gitHubToken)
+        if (releases.Length > 0) {
+            this._SaveChangelogCache(releases)
+            this._Log("Changelog 缓存已保存，共 " releases.Length " 个版本")
+            return true
+        }
+        this._Log("获取 Changelog 缓存失败（无网络或API不可用）")
+        return false
+    }
+
     ; 内部：保存 changelog 缓存到 changelog.json
     static _SaveChangelogCache(releases) {
         try {
