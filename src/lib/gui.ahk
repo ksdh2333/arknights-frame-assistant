@@ -283,6 +283,13 @@ class GuiManager {
         sepUpdateTxt := this.MainGui.Add("Text", "x" this.GuiXMargin " xs+50 y+-9 Center ca0a0a0", "  更新设置  ")
         this.OtherSettingsControls.Push(sepUpdate)
         this.OtherSettingsControls.Push(sepUpdateTxt)
+        ; 更新渠道
+        txtUpdateChannel := this.MainGui.Add("Text", "x" this.GuiXMargin " y+10", "更新渠道")
+        dropdownUpdateChannel := this.MainGui.Add("DropDownList", "x+10 yp-2 w120 vUpdateChannel AltSubmit", ["正式版", "测试版"])
+        dropdownUpdateChannel.OnEvent("Change", (*) => this.SetIsModifiedTrue())
+        dropdownUpdateChannel.Value := Config.GetImportant("UpdateChannel")
+        this.OtherSettingsControls.Push(txtUpdateChannel)
+        this.OtherSettingsControls.Push(dropdownUpdateChannel)
         ; 自动检查更新
         checkboxAutoUpdate := this.MainGui.Add("Checkbox", "x" this.GuiXMargin " y+10 h24 vAutoUpdate", " 自动检查更新")
         checkboxAutoUpdate.OnEvent("Click", (*) => this.SetIsModifiedTrue())
@@ -290,7 +297,7 @@ class GuiManager {
         this.OtherSettingsControls.Push(checkboxAutoUpdate)
         ; 手动检查更新
         this.BtnCheckUpdate := this.MainGui.Add("Button", "x+10 yp w" this.BtnW " h24", "手动检查更新")
-        this.BtnCheckUpdate.OnEvent("Click", (*) => EventBus.Publish("CheckUpdateClick"))
+        this.BtnCheckUpdate.OnEvent("Click", (*) => this.OnManualCheckClick())
         this.BtnManualDownload := this.MainGui.Add("Button", "x+10 yp w" this.BtnW " h24", "手动下载更新")
         this.BtnManualDownload.OnEvent("Click", (*) => EventBus.Publish("OnManualDownload"))
         this.OtherSettingsControls.Push(this.BtnCheckUpdate)
@@ -388,6 +395,29 @@ class GuiManager {
         EventBus.Subscribe("GuiHide", (*) => this.Hide())
         EventBus.Subscribe("KeyBindFocusSave", (*) => this.FocusSaveButton())
         EventBus.Subscribe("GuiHideStopHook", HandleGuiHideStopHook)
+        EventBus.Subscribe("CheckUpdateComplete", (*) => this.OnCheckUpdateComplete())
+        EventBus.Subscribe("CheckUpdateStart", (*) => this.OnCheckUpdateStart())
+    }
+    
+    ; 点击"手动检查更新"按钮
+    static OnManualCheckClick() {
+        EventBus.Publish("CheckUpdateClick")
+    }
+    
+    ; 检查完成，恢复按钮
+    static OnCheckUpdateComplete() {
+        try {
+            this.BtnCheckUpdate.Opt("-Disabled")
+            this.BtnCheckUpdate.Text := "手动检查更新"
+        }
+    }
+    
+    ; 检查开始，禁用按钮
+    static OnCheckUpdateStart() {
+        try {
+            this.BtnCheckUpdate.Opt("+Disabled")
+            this.BtnCheckUpdate.Text := "检查中..."
+        }
     }
     
     ; 显示GUI窗口
