@@ -53,6 +53,7 @@ class Updater {
         }
         
         ; 执行版本检查
+        EventBus.Publish("CheckUpdateStart")
         checkResult := VersionChecker.Check()
         
         ; 处理检查结果
@@ -72,6 +73,7 @@ class Updater {
                 lastDismissed := Config.GetImportant("LastDismissedVersion")
                 if (!isManual && lastDismissed == checkResult.remoteVersion) {
                     ; 自动检查时，如果该版本已被忽略，则跳过
+                    EventBus.Publish("CheckUpdateComplete")
                     return
                 }
                 
@@ -80,7 +82,8 @@ class Updater {
                     localVersion: checkResult.localVersion,
                     remoteVersion: checkResult.remoteVersion,
                     downloadUrl: checkResult.downloadUrl,
-                    isManual: isManual
+                    isManual: isManual,
+                    changelogBody: checkResult.HasProp("changelogBody") ? checkResult.changelogBody : ""
                 })
             
             case "rate_limited":
@@ -92,12 +95,10 @@ class Updater {
             case "token_invalid":
                 if (isManual) {
                     ; Token无效，引导用户重新配置
-                    result := MessageBox.Confirm(checkResult.message "`n`n是否现在修改Token设置？", "Token无效")
-                    if (result = "Yes") {
-                        ; 重置Token验证状态
-                        VersionChecker.TokenValidated := false
-                        GuiManager.Show()
-                    }
+                    result := MessageBox.Info(checkResult.message)
+                    ; 重置Token验证状态
+                    VersionChecker.TokenValidated := false
+                    GuiManager.Show()
                 }
             
             case "check_failed":
@@ -105,6 +106,7 @@ class Updater {
                     UpdateUI.ShowCheckFailedDialog(checkResult.message)
                 }
         }
+        EventBus.Publish("CheckUpdateComplete")
     }
     
     ; 带重试的下载
@@ -121,6 +123,7 @@ class Updater {
             downloadUrl: params.downloadUrl,
             localVersion: params.localVersion,
             remoteVersion: params.remoteVersion,
+            onProgress: (data) => UpdateUI.UpdateDownloadProgress(data),
             onComplete: (result) => this.HandleDownloadSuccess(result),
             onError: (error) => this.HandleDownloadFailure(error, params, retryCount),
             onCancel: (info) => this.HandleDownloadCancelComplete()
@@ -211,7 +214,7 @@ class Updater {
         Config.SaveAllToIni()
         
         ; 显示提示
-        MessageBox.Info("已忽略版本 " data.remoteVersion " 的更新提示。`n`n下次检查更新时将不再提示此版本。", "已忽略")
+        MessageBox.Info("已忽略版本 " data.remoteVersion " 的更新提示。`n`n下次自动检查更新时将不再提示此版本。", "已忽略")
     }
     
     ; 显示更新对话框

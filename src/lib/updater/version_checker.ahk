@@ -1,8 +1,11 @@
 ; == 版本检查器 ==
 
 class VersionChecker {
-    ; GitHub API地址
+    ; GitHub API地址（完整列表，含预发布）
     static ApiUrl := "https://api.github.com/repos/CloudTracey/arknights-frame-assistant/releases"
+    
+    ; GitHub API地址（仅正式版）
+    static StableApiUrl := "https://api.github.com/repos/CloudTracey/arknights-frame-assistant/releases/latest"
     
     ; Token验证API地址
     static TokenValidateUrl := "https://api.github.com/user"
@@ -11,7 +14,7 @@ class VersionChecker {
     static CacheFile := ""
     
     ; 超时设置（毫秒）
-    static TimeoutMs := 10000
+    static TimeoutMs := 5000
     
     ; 是否启用调试日志（根据版本号判断，alpha版本启用）
     static DebugMode := false
@@ -88,9 +91,9 @@ class VersionChecker {
     ; 返回: {http, error} - error非空表示创建失败
     static _CreateHttpRequest(url, token := "") {
         try {
-            http := ComObject("WinHttp.WinHttpRequest.5.1")
-            http.SetTimeouts(this.TimeoutMs, this.TimeoutMs, this.TimeoutMs, this.TimeoutMs)
-            http.Open("GET", url, false)
+            http := ComObject("MSXML2.ServerXMLHTTP.6.0")
+            http.SetProxy(0)
+            http.Open("GET", url, true)
             http.SetRequestHeader("Accept", "application/vnd.github.v3+json")
             http.SetRequestHeader("User-Agent", "ArknightsFrameAssistant/" Version.Get())
             if (token != "")
@@ -164,6 +167,17 @@ class VersionChecker {
             }
             
             req.http.Send()
+            tokenStart := A_TickCount
+            Loop {
+                Sleep(50)
+                if (req.http.readyState >= 4)
+                    break
+                if (A_TickCount - tokenStart > this.TimeoutMs) {
+                    try req.http.Abort()
+                    this._Log("Token验证超时")
+                    return {valid: false, message: "请求超时，请检查网络连接", username: "", rateLimit: ""}
+                }
+            }
             resp := this._GetResponseInfo(req.http)
             rateInfo := this._GetRateLimitInfo(req.http)
             
@@ -272,7 +286,31 @@ class VersionChecker {
         
         return {code: "N/A", desc: desc}
     }
-    
+
+    ; 内部：反转义 JSON 字符串
+    static _UnescapeJsonString(str) {
+        placeholder := Chr(1)
+        result := StrReplace(str, "\\", placeholder)
+        result := StrReplace(result, '\"', Chr(34))
+        result := StrReplace(result, "\/", "/")
+        result := StrReplace(result, "\n", "`n")
+        result := StrReplace(result, "\r", "`r")
+        result := StrReplace(result, "\t", "`t")
+        result := StrReplace(result, placeholder, "\")
+        return result
+    }
+
+    ; 内部：转义字符串为 JSON 字符串值
+    static _EscapeJsonString(str) {
+        result := StrReplace(str, "\", "\\")
+        result := StrReplace(result, Chr(34), '\"')
+        result := StrReplace(result, "`r`n", "\r\n")
+        result := StrReplace(result, "`n", "\n")
+        result := StrReplace(result, "`r", "\r")
+        result := StrReplace(result, "`t", "\t")
+        return result
+    }
+
     ; 检查更新（主入口）
     ; 返回: {status, localVersion, remoteVersion, downloadUrl, message}
     static Check() {
@@ -299,10 +337,22 @@ class VersionChecker {
     
     ; 内部：从API获取最新版本
     static _FetchFromApi(localVersion, useGitHubToken) {
+        updateChannel := Config.GetImportant("UpdateChannel")
+        isStable := (updateChannel == "1")
+        
+        ; 选择API URL
+        if (isStable) {
+            apiUrl := this.StableApiUrl
+            this._Log("更新渠道: 正式版")
+        } else {
+            apiUrl := this.ApiUrl
+            this._Log("更新渠道: 测试版")
+        }
+        
         this._Log("========== 开始版本检查 ==========")
         this._Log("Timestamp: " this._Timestamp())
         this._Log("本地版本: [" localVersion "] 长度: " StrLen(localVersion))
-        this._Log("API URL: " this.ApiUrl)
+        this._Log("API URL: " apiUrl)
         this._Log("超时设置: " this.TimeoutMs "ms")
         gitHubToken := ""
         
@@ -327,10 +377,10 @@ class VersionChecker {
         if (gitHubToken != "")
             headersMap["Authorization"] := "token " gitHubToken
         
-        this._LogRequest("VERSION_CHECK_REQUEST", this.ApiUrl, "GET", headersMap)
+        this._LogRequest("VERSION_CHECK_REQUEST", apiUrl, "GET", headersMap)
         
         try {
-            req := this._CreateHttpRequest(this.ApiUrl, gitHubToken)
+            req := this._CreateHttpRequest(apiUrl, gitHubToken)
             if (req.error != "") {
                 this._Log("创建HTTP请求失败: " req.error)
                 return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "网络错误: " req.error}
@@ -338,6 +388,17 @@ class VersionChecker {
             
             this._Log("发送请求...")
             req.http.Send()
+            checkStart := A_TickCount
+            Loop {
+                Sleep(50)
+                if (req.http.readyState >= 4)
+                    break
+                if (A_TickCount - checkStart > this.TimeoutMs) {
+                    try req.http.Abort()
+                    this._Log("版本检查超时")
+                    return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "请求超时，请检查网络连接"}
+                }
+            }
             this._Log("请求已发送，等待响应...")
             
             resp := this._GetResponseInfo(req.http)
@@ -357,30 +418,89 @@ class VersionChecker {
                 return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "服务器返回错误: " resp.statusCode " " resp.statusText}
             }
             
-            ; 解析JSON响应
-            remoteVersion := this._ExtractJsonValue(resp.body, "tag_name")
-            downloadUrl := this._ExtractJsonValue(resp.body, "browser_download_url")
-            this._Log("解析结果 - 远程版本: " remoteVersion)
-            this._Log("解析结果 - 下载地址: " downloadUrl)
-            
-            if (remoteVersion = "" || downloadUrl = "") {
-                this._Log("无法解析版本信息")
-                return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "无法解析版本信息"}
-            }
-            
-            ; 保存到缓存
-            this._SaveToCache(remoteVersion, downloadUrl)
-            
-            ; 比较版本
-            compareResult := this._CompareVersions(localVersion, remoteVersion)
-            this._Log("版本比较结果: " compareResult " (-1=需更新, 0=相同, 1=本地更新)")
-            
-            if (compareResult < 0) {
-                this._Log("发现新版本: " remoteVersion)
-                return {status: "update_available", localVersion: localVersion, remoteVersion: remoteVersion, downloadUrl: downloadUrl}
+            ; 根据渠道解析响应
+            if (isStable) {
+                ; 正式版：/releases/latest 返回单个对象
+                remoteVersion := this._ExtractJsonValue(resp.body, "tag_name")
+                downloadUrl := this._ExtractJsonValue(resp.body, "browser_download_url")
+
+                ; 额外请求全量 releases 用于 changelog
+                allReleases := this._FetchAllReleases(gitHubToken)
+                if (allReleases.Length > 0) {
+                    this._SaveChangelogCache(allReleases)
+                }
+                changelogBody := (allReleases.Length > 0) ? this._BuildChangelogBody(localVersion, allReleases) : ""
+                this._Log("解析结果（正式版） - 远程版本: " remoteVersion)
+                this._Log("解析结果（正式版） - 下载地址: " downloadUrl)
+                
+                if (remoteVersion = "" || downloadUrl = "") {
+                    this._Log("无法解析版本信息")
+                    return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "无法解析版本信息"}
+                }
+                
+                ; 保存到缓存
+                this._SaveToCache(remoteVersion, downloadUrl)
+                
+                ; 比较版本
+                compareResult := this._CompareVersions(localVersion, remoteVersion)
+                this._Log("版本比较结果: " compareResult " (-1=需更新, 0=相同, 1=本地更新)")
+                
+                if (compareResult < 0) {
+                    this._Log("发现新版本: " remoteVersion)
+                    return {status: "update_available", localVersion: localVersion, remoteVersion: remoteVersion, downloadUrl: downloadUrl, changelogBody: changelogBody}
+                } else {
+                    this._Log("已是最新版本")
+                    return {status: "up_to_date", localVersion: localVersion, remoteVersion: remoteVersion, downloadUrl: ""}
+                }
             } else {
-                this._Log("已是最新版本")
-                return {status: "up_to_date", localVersion: localVersion, remoteVersion: remoteVersion, downloadUrl: ""}
+                ; 测试版：/releases 返回数组，解析所有发布并找到最高版本
+                releases := this._ParseReleasesArray(resp.body)
+
+                ; 保存 changelog 缓存
+                if (releases.Length > 0) {
+                    this._SaveChangelogCache(releases)
+                }
+                changelogBody := (releases.Length > 0) ? this._BuildChangelogBody(localVersion, releases) : ""
+                this._Log("解析到 " releases.Length " 个发布版本")
+                
+                if (releases.Length = 0) {
+                    this._Log("无法解析版本信息")
+                    return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "无法解析版本信息"}
+                }
+                
+                ; 找出SemVer最高的版本（包含正式版和预发布版）
+                bestIndex := 1
+                Loop releases.Length - 1 {
+                    idx := A_Index + 1
+                    if (this._CompareVersions(releases[bestIndex].tag_name, releases[idx].tag_name) < 0)
+                        bestIndex := idx
+                }
+                bestRelease := releases[bestIndex]
+                
+                remoteVersion := bestRelease.tag_name
+                downloadUrl := bestRelease.downloadUrl
+                this._Log("解析结果（测试版） - 最高远程版本: " remoteVersion)
+                this._Log("解析结果（测试版） - 下载地址: " downloadUrl)
+                
+                if (remoteVersion = "" || downloadUrl = "") {
+                    this._Log("无法解析版本信息")
+                    return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "无法解析版本信息"}
+                }
+                
+                ; 保存到缓存
+                this._SaveToCache(remoteVersion, downloadUrl)
+                
+                ; 比较版本
+                compareResult := this._CompareVersions(localVersion, remoteVersion)
+                this._Log("版本比较结果: " compareResult " (-1=需更新, 0=相同, 1=本地更新)")
+                
+                if (compareResult < 0) {
+                    this._Log("发现新版本: " remoteVersion)
+                    return {status: "update_available", localVersion: localVersion, remoteVersion: remoteVersion, downloadUrl: downloadUrl, changelogBody: changelogBody}
+                } else {
+                    this._Log("已是最新版本")
+                    return {status: "up_to_date", localVersion: localVersion, remoteVersion: remoteVersion, downloadUrl: ""}
+                }
             }
         } catch as err {
             errorInfo := this._ParseErrorInfo(err)
@@ -396,6 +516,89 @@ class VersionChecker {
             
             return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: userMessage, errorDetail: "[" errorInfo.code "] " err.Message}
         }
+    }
+
+    ; 内部：获取全部 releases（正式版渠道额外请求，用于构建 changelog 缓存）
+    static _FetchAllReleases(token := "") {
+        try {
+            req := this._CreateHttpRequest(this.ApiUrl, token)
+            if (req.error != "")
+                return []
+
+            req.http.Send()
+            start := A_TickCount
+            Loop {
+                Sleep(50)
+                if (req.http.readyState >= 4)
+                    break
+                if (A_TickCount - start > this.TimeoutMs) {
+                    try req.http.Abort()
+                    return []
+                }
+            }
+
+            resp := this._GetResponseInfo(req.http)
+            if (resp.statusCode != 200)
+                return []
+
+            return this._ParseReleasesArray(resp.body)
+        } catch {
+            return []
+        }
+    }
+
+    ; 内部：解析GitHub Releases JSON数组，提取所有发布版本
+    static _ParseReleasesArray(json) {
+        releases := []
+        pos := 1
+        
+        Loop {
+            pos := RegExMatch(json, '"tag_name"\s*:\s*"([^"]*)"', &tagMatch, pos)
+            if (pos == 0)
+                break
+            
+            tagName := tagMatch[1]
+            tagEnd := pos + StrLen(tagMatch[0])
+            
+            ; 确定当前release对象的结束位置（下一个tag_name之前或JSON结尾）
+            nextTagPos := RegExMatch(json, '"tag_name"', , tagEnd)
+            if (nextTagPos == 0)
+                nextTagPos := StrLen(json) + 1
+            
+            searchEnd := nextTagPos - 1
+            searchStr := SubStr(json, tagEnd, searchEnd - tagEnd + 1)
+            
+            ; 提取prerelease状态
+            prerelease := false
+            if (RegExMatch(searchStr, '"prerelease"\s*:\s*(true|false)', &preMatch)) {
+                prerelease := (preMatch[1] == "true")
+            }
+            
+            ; 提取下载地址
+            downloadUrl := ""
+            if (RegExMatch(searchStr, '"browser_download_url"\s*:\s*"([^"]*)"', &urlMatch)) {
+                downloadUrl := urlMatch[1]
+            }
+            
+            ; 提取 body（Release 正文，Markdown 格式）
+            body := ""
+            q := Chr(34)
+            bodyPattern := q "body" q "\s*:\s*" q "((?:[^" q "\\]|\\.)*)" q
+            if (RegExMatch(searchStr, bodyPattern, &bodyMatch)) {
+                body := this._UnescapeJsonString(bodyMatch[1])
+            }
+
+            ; 提取发布日期
+            date := ""
+            if (RegExMatch(searchStr, '"published_at"\s*:\s*"([^"]*)"', &dateMatch)) {
+                date := SubStr(dateMatch[1], 1, 10)  ; 提取 YYYY-MM-DD
+            }
+
+            releases.Push({tag_name: tagName, prerelease: prerelease, downloadUrl: downloadUrl, body: body, date: date})
+            pos := tagEnd
+        }
+        
+        return releases
     }
     
     ; 内部：从缓存加载
@@ -441,7 +644,72 @@ class VersionChecker {
             OutputDebug("保存缓存失败: " err.Message)
         }
     }
-    
+
+    ; 内部：保存 changelog 缓存到 changelog.json
+    static _SaveChangelogCache(releases) {
+        try {
+            configDir := A_AppData "\ArknightsFrameAssistant\PC"
+            changelogFile := configDir "\changelog.json"
+            if (!DirExist(configDir))
+                DirCreate(configDir)
+
+            json := '{"versions":['
+            firstAdded := false
+            for release in releases {
+                if (release.body = "")
+                    continue
+                if (firstAdded)
+                    json .= ","
+                escapedBody := this._EscapeJsonString(release.body)
+                json .= '{"tag_name":"' release.tag_name '","body":"' escapedBody '","date":"' release.date '"}'
+                firstAdded := true
+            }
+            json .= ']}'
+
+            if (FileExist(changelogFile))
+                FileDelete(changelogFile)
+            FileAppend(json, changelogFile, "UTF-8")
+        } catch Error as err {
+            OutputDebug("保存 changelog 缓存失败: " err.Message)
+        }
+    }
+
+    ; 内部：构建更新提示用的 changelog 文本（筛选高于 localVersion 的版本，降序排列）
+    static _BuildChangelogBody(localVersion, releases) {
+        newerReleases := []
+        for release in releases {
+            if (release.body = "")
+                continue
+            if (this._CompareVersions(localVersion, release.tag_name) < 0) {
+                newerReleases.Push(release)
+            }
+        }
+
+        if (newerReleases.Length = 0)
+            return ""
+
+        ; 降序排列（最高版本在前）
+        Loop newerReleases.Length - 1 {
+            Loop newerReleases.Length - A_Index {
+                if (this._CompareVersions(newerReleases[A_Index].tag_name, newerReleases[A_Index + 1].tag_name) < 0) {
+                    temp := newerReleases[A_Index]
+                    newerReleases[A_Index] := newerReleases[A_Index + 1]
+                    newerReleases[A_Index + 1] := temp
+                }
+            }
+        }
+
+        body := ""
+        for i, release in newerReleases {
+            dateHeaderPattern := "m)^## (\d{4}-\d{2}-\d{2})"
+            cleanBody := RegExReplace(release.body, dateHeaderPattern, "## " release.tag_name " ($1)")
+            if (i > 1)
+                body .= "`r`n`r`n---`r`n`r`n"
+            body .= cleanBody
+        }
+        return body
+    }
+
     ; 内部：比较版本号（支持语义化版本规范 SemVer 2.0.0）
     ; 返回: -1(本地<远程), 0(相等), 1(本地>远程)
     static _CompareVersions(localVersion, remoteVersion) {
