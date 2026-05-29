@@ -6,7 +6,6 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-orange.svg)](https://spdx.org/licenses/GPL-3.0-only.html)
 [![Language: AutoHotkey v2](https://img.shields.io/badge/Language-AutoHotkey_v2-6594B9.svg)](https://www.autohotkey.com/)
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows-blue.svg)](https://www.microsoft.com/windows)
-[![Version](https://img.shields.io/badge/Version-v1.4.7-8A2BE2.svg)](./src/lib/version.ahk)
 
 欢迎使用**明日方舟帧操小助手**（Arknights Frame Assistant，简称 **AFA**）
 
