@@ -13,6 +13,11 @@ class ChangelogChecker {
         if (dismissedVersion = currentVersion)
             return
 
+        if (!FileExist(this.ChangelogFile)) {
+            ; 首次启动 / 从旧版本升级：changelog.json 不存在，自动获取
+            VersionChecker.FetchChangelogCache()
+        }
+
         if (!FileExist(this.ChangelogFile))
             return
 
