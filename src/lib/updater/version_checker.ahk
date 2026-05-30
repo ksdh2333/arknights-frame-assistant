@@ -1,3 +1,39 @@
+; == 系统代理读取工具 ==
+; 从注册表读取 IE/WinINET 系统代理设置（Clash Verge / v2rayN 等代理软件均通过此配置），
+; 返回 ServerXMLHTTP.SetProxy(2, ...) 兼容的代理字符串。
+GetSystemProxyServer() {
+    try {
+        proxyEnable := RegRead("HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings", "ProxyEnable")
+        if (proxyEnable != 1)
+            return ""
+        proxyServer := RegRead("HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings", "ProxyServer")
+        if (proxyServer = "")
+            return ""
+        ; 含协议前缀时（如 "http=...;https=..."），将分号转空格以符合 ServerXMLHTTP 格式
+        if (InStr(proxyServer, "="))
+            proxyServer := StrReplace(proxyServer, ";", " ")
+        return proxyServer
+    } catch {
+        return ""
+    }
+}
+
+; 为 HTTP 请求对象应用系统代理：系统代理已启用 → SetProxy(2, ...)；未启用 → SetProxy(0) 回退到 WinHTTP 默认
+ApplySystemProxy(http) {
+    proxyServer := GetSystemProxyServer()
+    if (proxyServer != "") {
+        bypassList := ""
+        try {
+            bypassList := RegRead("HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings", "ProxyOverride")
+            if (bypassList != "")
+                bypassList := StrReplace(bypassList, ";", " ")
+        }
+        http.SetProxy(2, proxyServer, bypassList)
+    } else {
+        http.SetProxy(0)
+    }
+}
+
 ; == 版本检查器 ==
 
 class VersionChecker {
@@ -92,7 +128,7 @@ class VersionChecker {
     static _CreateHttpRequest(url, token := "") {
         try {
             http := ComObject("MSXML2.ServerXMLHTTP.6.0")
-            http.SetProxy(0)
+            ApplySystemProxy(http)
             http.Open("GET", url, true)
             http.SetRequestHeader("Accept", "application/vnd.github.v3+json")
             http.SetRequestHeader("User-Agent", "ArknightsFrameAssistant/" Version.Get())
