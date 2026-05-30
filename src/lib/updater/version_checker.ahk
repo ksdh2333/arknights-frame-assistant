@@ -18,13 +18,20 @@ GetSystemProxyServer() {
     }
 }
 
-; 为 HTTP 请求对象应用系统代理：系统代理已启用 → SetProxy(2, ...)；未启用 → SetProxy(1) 直连
+; 为 HTTP 请求对象应用系统代理：系统代理已启用 → SetProxy(2, ...)；未启用 → SetProxy(0) 回退到 WinHTTP 默认
 ApplySystemProxy(http) {
     proxyServer := GetSystemProxyServer()
-    if (proxyServer != "")
-        http.SetProxy(2, proxyServer)
-    else
-        http.SetProxy(1)
+    if (proxyServer != "") {
+        bypassList := ""
+        try {
+            bypassList := RegRead("HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings", "ProxyOverride")
+            if (bypassList != "")
+                bypassList := StrReplace(bypassList, ";", " ")
+        }
+        http.SetProxy(2, proxyServer, bypassList)
+    } else {
+        http.SetProxy(0)
+    }
 }
 
 ; == 版本检查器 ==
