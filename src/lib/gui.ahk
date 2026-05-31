@@ -15,6 +15,7 @@ class GuiManager {
     static SwitchHotkey := ""
     static IsModified := false
     static _InitialValues := Map()  ; 初始值快照，用于脏值对比
+    static HintUnsaved := ""       ; "修改尚未保存或应用！"提示文字
     static IsOnStrongHoldProtocol := false
     static DefaultTab := ""
     
@@ -348,7 +349,8 @@ class GuiManager {
         this.BtnDefaultHotkeys := this.MainGui.Add("Button", "x" BtnX_DefaultHotkeys " y+20 w" this.BtnW " h32", "重置按键") ; 仅在按键相关标签下显示
         this.BtnDefaultHotkeys.OnEvent("Click", (*) => EventBus.Publish("SettingsReset"))
         this.NotOtherControls.Push(this.BtnDefaultHotkeys)
-        
+
+        this.HintUnsaved := this.MainGui.Add("Text", "x" (BtnX_Save - 145) " yp w140 Right cFF0000 Hidden", "修改尚未保存或应用！")
         this.BtnSave := this.MainGui.Add("Button", "x" BtnX_Save " yp w" this.BtnW " h32 Default Disabled", "保存并关闭")
         this.BtnSave.OnEvent("Click", (*) => EventBus.Publish("SettingsSave"))
         this.BtnApply := this.MainGui.Add("Button", "x" BtnX_Apply " yp w" this.BtnW " h32 Default Disabled", "应用设置")
@@ -486,6 +488,7 @@ class GuiManager {
         if (this.IsModified == true)
             return
         this.IsModified := true
+        try this.HintUnsaved.Visible := true
         try this.BtnSave.Opt("-Disabled")
         try this.BtnApply.Opt("-Disabled")
     }
@@ -495,6 +498,7 @@ class GuiManager {
         if (this.IsModified == false)
             return
         this.IsModified := false
+        try this.HintUnsaved.Visible := false
         try this.BtnSave.Opt("+Disabled")
         try this.BtnApply.Opt("+Disabled")
     }
