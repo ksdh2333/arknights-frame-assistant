@@ -158,7 +158,7 @@ class GuiManager {
         ; 游戏内帧率设置
         txtFrame := this.MainGui.Add("Text", "x45 y+20 w90 Right", "游戏内帧率")
         this.GuiFrame := this.MainGui.Add("DropDownList", "x+20 y+-18 w120 vFrame AltSubmit", ["30", "60", "90", "120", "144", "165", "240"])
-        this.GuiFrame.OnEvent("Change", (*) => this.SetIsModifiedTrue())
+        this.GuiFrame.OnEvent("Change", (*) => this.TrackChange("Frame"))
         this.MainGui["Frame"].Value := Config.GetImportant("Frame")
         this.NotOtherControls.Push(txtFrame)
         this.NotOtherControls.Push(this.GuiFrame)
@@ -247,22 +247,22 @@ class GuiManager {
         this.OtherSettingsControls.Push(sepLaunchTxt)
         ; 自动关闭
         checkboxAutoExit := this.MainGui.Add("Checkbox", "x" this.GuiXMargin " y+10 h24 vAutoExit", " 随游戏进程关闭自动退出（强烈建议开启）")
-        checkboxAutoExit.OnEvent("Click", (*) => this.SetIsModifiedTrue())
+        checkboxAutoExit.OnEvent("Click", (*) => this.TrackChange("AutoExit"))
         this.MainGui["AutoExit"].Value := Config.GetImportant("AutoExit")
         this.OtherSettingsControls.Push(checkboxAutoExit)
         ; 自动打开设置
         checkboxAutoOpenSettings := this.MainGui.Add("Checkbox", "x" this.GuiXMargin " y+10 h24 vAutoOpenSettings", " 启动时打开设置窗口")
-        checkboxAutoOpenSettings.OnEvent("Click", (*) => this.SetIsModifiedTrue())
+        checkboxAutoOpenSettings.OnEvent("Click", (*) => this.TrackChange("AutoOpenSettings"))
         this.MainGui["AutoOpenSettings"].Value := Config.GetImportant("AutoOpenSettings")
         this.OtherSettingsControls.Push(checkboxAutoOpenSettings)
         ; 默认启动卫戍协议方案
         checkboxDefaultStrongHoldProtocol := this.MainGui.Add("Checkbox", "x" this.GuiXMargin " y+10 h24 vDefaultStrongHoldProtocol", " 默认启动卫戍协议方案")
-        checkboxDefaultStrongHoldProtocol.OnEvent("Click", (*) => this.SetIsModifiedTrue())
+        checkboxDefaultStrongHoldProtocol.OnEvent("Click", (*) => this.TrackChange("DefaultStrongHoldProtocol"))
         this.MainGui["DefaultStrongHoldProtocol"].Value := Config.GetImportant("DefaultStrongHoldProtocol")
         this.OtherSettingsControls.Push(checkboxDefaultStrongHoldProtocol)
         ; 自动启动游戏
         checkboxAutoRunGame := this.MainGui.Add("Checkbox", "x" this.GuiXMargin " y+10 h24 vAutoRunGame", " 同时启动明日方舟")
-        checkboxAutoRunGame.OnEvent("Click", (*) => this.SetIsModifiedTrue())
+        checkboxAutoRunGame.OnEvent("Click", (*) => this.TrackChange("AutoRunGame"))
         this.MainGui["AutoRunGame"].Value := Config.GetImportant("AutoRunGame")
         this.OtherSettingsControls.Push(checkboxAutoRunGame)
         ; 识别游戏路径
@@ -274,7 +274,7 @@ class GuiManager {
         ; 游戏路径
         txtGamePath := this.MainGui.Add("Text", "x" this.GuiXMargin +17 " y+10 h24", " 游戏路径: ")
         editGamePath := this.MainGui.Add("Edit", "x+10 yp-2 w576 h20 vGamePath -Multi +0x1", Config.GetImportant("GamePath"))
-        editGamePath.OnEvent("Change", (*) => this.SetIsModifiedTrue())
+        editGamePath.OnEvent("Change", (*) => this.TrackChange("GamePath"))
         this.OtherSettingsControls.Push(txtGamePath)
         this.OtherSettingsControls.Push(editGamePath)
         this.MainGui.Add("Text", "yp+30 w0 h0")
@@ -287,13 +287,13 @@ class GuiManager {
         ; 更新渠道
         txtUpdateChannel := this.MainGui.Add("Text", "x" this.GuiXMargin " y+10", "更新渠道")
         dropdownUpdateChannel := this.MainGui.Add("DropDownList", "x+10 yp-2 w120 vUpdateChannel AltSubmit", ["正式版", "测试版"])
-        dropdownUpdateChannel.OnEvent("Change", (*) => this.SetIsModifiedTrue())
+        dropdownUpdateChannel.OnEvent("Change", (*) => this.TrackChange("UpdateChannel"))
         dropdownUpdateChannel.Value := Config.GetImportant("UpdateChannel")
         this.OtherSettingsControls.Push(txtUpdateChannel)
         this.OtherSettingsControls.Push(dropdownUpdateChannel)
         ; 自动检查更新
         checkboxAutoUpdate := this.MainGui.Add("Checkbox", "x" this.GuiXMargin " y+10 h24 vAutoUpdate", " 自动检查更新")
-        checkboxAutoUpdate.OnEvent("Click", (*) => this.SetIsModifiedTrue())
+        checkboxAutoUpdate.OnEvent("Click", (*) => this.TrackChange("AutoUpdate"))
         this.MainGui["AutoUpdate"].Value := Config.GetImportant("AutoUpdate")
         this.OtherSettingsControls.Push(checkboxAutoUpdate)
         ; 手动检查更新
@@ -305,10 +305,11 @@ class GuiManager {
         this.OtherSettingsControls.Push(this.BtnManualDownload)
         ; github token
         checkboxUseGitHubToken := this.MainGui.Add("Checkbox", "x" this.GuiXMargin " y+10 h24 vUseGitHubToken", " 使用GitHub Token: ")
-        checkboxUseGitHubToken.OnEvent("Click", (*) => this.SetIsModifiedTrue())
+        checkboxUseGitHubToken.OnEvent("Click", (*) => this.TrackChange("UseGitHubToken"))
         this.MainGui["UseGitHubToken"].Value := Config.GetImportant("UseGitHubToken")
         checkboxUseGitHubToken.OnEvent("Click", (*) => this.SetEditDisabled(editGithubToken, checkboxUseGitHubToken.Value))
         editGithubToken := this.MainGui.Add("Edit", "x+10 yp+2 w515 h20 vGitHubToken Password -Multi +0x1", Config.GetImportant("GitHubToken"))
+        editGithubToken.OnEvent("Change", (*) => this.TrackChange("GitHubToken"))
         this.SetEditDisabled(editGithubToken, checkboxUseGitHubToken.Value)
         hintGithubToken := this.MainGui.Add("Text", "xs+50 y+6 c9c9c9c", "只要没有提示API配额超限，就不需要使用GitHub Token")
         this.OtherSettingsControls.Push(checkboxUseGitHubToken)
@@ -324,7 +325,7 @@ class GuiManager {
         ; 点击延迟设置
         txtClickDelay := this.MainGui.Add("Text", "x" this.GuiXMargin " y+10 Section", "点击延迟")
         this.ClickDelay := this.MainGui.Add("Edit", "x+15 y+-18 w120 h21 vClickDelay Number", Config.GetCustom("ClickDelay"))
-        this.ClickDelay.OnEvent("Change", (*) => this.SetIsModifiedTrue())
+        this.ClickDelay.OnEvent("Change", (*) => this.TrackChange("ClickDelay"))
         updownClickDelay := this.MainGui.Add("UpDown", ,Config.GetCustom("ClickDelay"))
         hintClickDelay := this.MainGui.Add("Text", "x+15 ys c9c9c9c", "从选中单位到按下【技能】【撤退】【出售】的间隔，单位为毫秒，太短点击会失灵")
         this.OtherSettingsControls.Push(txtClickDelay)
