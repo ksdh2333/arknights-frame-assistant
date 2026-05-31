@@ -350,13 +350,13 @@ class GuiManager {
         this.BtnDefaultHotkeys.OnEvent("Click", (*) => EventBus.Publish("SettingsReset"))
         this.NotOtherControls.Push(this.BtnDefaultHotkeys)
 
-        this.HintUnsaved := this.MainGui.Add("Text", "x" (BtnX_Save - 145) " yp w140 Right cFF0000 Hidden", "修改尚未保存或应用！")
         this.BtnSave := this.MainGui.Add("Button", "x" BtnX_Save " yp w" this.BtnW " h32 Default Disabled", "保存并关闭")
         this.BtnSave.OnEvent("Click", (*) => EventBus.Publish("SettingsSave"))
         this.BtnApply := this.MainGui.Add("Button", "x" BtnX_Apply " yp w" this.BtnW " h32 Default Disabled", "应用设置")
         this.BtnApply.OnEvent("Click", (*) => EventBus.Publish("SettingsApply"))
         this.BtnCancel := this.MainGui.Add("Button", "x" BtnX_Cancel " yp w" this.BtnW " h32", "取消")
         this.BtnCancel.OnEvent("Click", (*) => EventBus.Publish("SettingsCancel"))
+        this.HintUnsaved := this.MainGui.Add("Text", "x" (BtnX_Save - 145) " yp+8 w140 h24 Right cFF0000 Hidden", "修改尚未保存或应用！")
 
         ; 空白占位
         this.MainGui.Add("Text", "xm y+15 w1 h1")
