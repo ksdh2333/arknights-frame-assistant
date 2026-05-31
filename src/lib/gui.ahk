@@ -14,6 +14,7 @@ class GuiManager {
     static ClickDelay := ""
     static SwitchHotkey := ""
     static IsModified := false
+    static _InitialValues := Map()  ; 初始值快照，用于脏值对比
     static IsOnStrongHoldProtocol := false
     static DefaultTab := ""
     
@@ -489,6 +490,67 @@ class GuiManager {
         if (this.IsModified == false)
             return
         this.IsModified := false
+    }
+
+    ; 捕获初始值快照（从当前 GUI 控件值读取）
+    static CaptureInitialSnapshot() {
+        this._InitialValues := Map()
+        ; 热键控件 — GUI 显示的是 VirtualNewkeyFormat 后的值
+        for key in Config.AllHotkeys {
+            try {
+                this._InitialValues[key] := this.MainGui[key].Value
+            }
+        }
+        ; Important 设置
+        for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken"] {
+            try {
+                this._InitialValues[key] := this.MainGui[key].Value
+            }
+        }
+        ; Custom 设置
+        try {
+            this._InitialValues["SwitchHotkey"] := this.MainGui["SwitchHotkey"].Value
+        }
+        try {
+            this._InitialValues["ClickDelay"] := this.MainGui["ClickDelay"].Value
+        }
+    }
+
+    ; 跟踪控件变更——与初始快照对比，决定按钮启用/禁用
+    static TrackChange(controlName) {
+        try {
+            currentValue := this.MainGui[controlName].Value
+        } catch {
+            return
+        }
+        if (this._InitialValues.Has(controlName) && currentValue == this._InitialValues[controlName]) {
+            ; 该控件值已恢复初始——检查所有控件是否全部一致
+            for key in Config.AllHotkeys {
+                try {
+                    if (this.MainGui[key].Value != this._InitialValues[key])
+                        return
+                }
+            }
+            for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken"] {
+                try {
+                    if (this.MainGui[key].Value != this._InitialValues[key])
+                        return
+                }
+            }
+            try {
+                if (this.MainGui["SwitchHotkey"].Value != this._InitialValues["SwitchHotkey"])
+                    return
+            }
+            try {
+                if (this.MainGui["ClickDelay"].Value != this._InitialValues["ClickDelay"])
+                    return
+            }
+            ; 全部一致
+            this.SetIsModifiedFalse()
+        } else {
+            ; 有差异
+            this.SetIsModifiedTrue()
+        }
     }
 
     ; 内部：隐藏所有标签页的控件
