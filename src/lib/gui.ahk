@@ -348,9 +348,9 @@ class GuiManager {
         this.BtnDefaultHotkeys.OnEvent("Click", (*) => EventBus.Publish("SettingsReset"))
         this.NotOtherControls.Push(this.BtnDefaultHotkeys)
         
-        this.BtnSave := this.MainGui.Add("Button", "x" BtnX_Save " yp w" this.BtnW " h32 Default", "保存并关闭")
+        this.BtnSave := this.MainGui.Add("Button", "x" BtnX_Save " yp w" this.BtnW " h32 Default Disabled", "保存并关闭")
         this.BtnSave.OnEvent("Click", (*) => EventBus.Publish("SettingsSave"))
-        this.BtnApply := this.MainGui.Add("Button", "x" BtnX_Apply " yp w" this.BtnW " h32 Default", "应用设置")
+        this.BtnApply := this.MainGui.Add("Button", "x" BtnX_Apply " yp w" this.BtnW " h32 Default Disabled", "应用设置")
         this.BtnApply.OnEvent("Click", (*) => EventBus.Publish("SettingsApply"))
         this.BtnCancel := this.MainGui.Add("Button", "x" BtnX_Cancel " yp w" this.BtnW " h32", "取消")
         this.BtnCancel.OnEvent("Click", (*) => EventBus.Publish("SettingsCancel"))
@@ -424,6 +424,8 @@ class GuiManager {
     ; 显示GUI窗口
     static Show() {
         this.MainGui.Show()
+        this.CaptureInitialSnapshot()
+        this.SetIsModifiedFalse()  ; 确保按钮为禁用状态
         this.BtnSave.Focus()
         if (IsSet(WatchActiveWindow)) {
             SetTimer WatchActiveWindow, 50
@@ -483,6 +485,8 @@ class GuiManager {
         if (this.IsModified == true)
             return
         this.IsModified := true
+        try this.BtnSave.Opt("-Disabled")
+        try this.BtnApply.Opt("-Disabled")
     }
 
     ; 将修改状态改为未修改
@@ -490,6 +494,8 @@ class GuiManager {
         if (this.IsModified == false)
             return
         this.IsModified := false
+        try this.BtnSave.Opt("+Disabled")
+        try this.BtnApply.Opt("+Disabled")
     }
 
     ; 捕获初始值快照（从当前 GUI 控件值读取）
@@ -734,8 +740,9 @@ class GuiManager {
         ; 更新UI
         this._UpdateTabUI(tabName)
 
-        ; 将修改状态改回未修改
+        ; 将修改状态改回未修改，并刷新快照
         this.SetIsModifiedFalse()
+        this.CaptureInitialSnapshot()
     }
 }
 
