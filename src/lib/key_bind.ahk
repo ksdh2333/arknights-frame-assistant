@@ -69,7 +69,7 @@ class KeyBinder {
                     Config.SetCustom(KeyBinder.ControlObj.Name, "")
                 else
                     Config.SetHotkey(KeyBinder.ControlObj.Name, "")
-                GuiManager.SetIsModifiedTrue()
+                GuiManager.TrackChange(KeyBinder.ControlObj.Name)
             }
             else if(pureNewkey == "LWin" OR pureNewkey == "RWin") {
                 KeyBinder.LastEditObject.Value := KeyBinder.OriginalValue
@@ -80,7 +80,7 @@ class KeyBinder {
                     Config.SetCustom(KeyBinder.ControlObj.Name, realNewkey)
                 else 
                     Config.SetHotkey(KeyBinder.ControlObj.Name, realNewkey) ; 把人不能读也不该读的东西丢给内存
-                GuiManager.SetIsModifiedTrue()
+                GuiManager.TrackChange(KeyBinder.ControlObj.Name)
             }
         }
         KeyBinder.LastEditObject := ""
