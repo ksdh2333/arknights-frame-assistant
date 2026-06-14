@@ -54,7 +54,6 @@ class TouchInjector {
     ; 解析坐标，省略则用鼠标位置
     static _ResolveCoord(x?, y?) {
         if (!IsSet(x) || !IsSet(y)) {
-            CoordMode("Mouse", "Screen")
             MouseGetPos(&mx, &my)
             if (!IsSet(x))
                 x := mx
@@ -84,7 +83,7 @@ class TouchInjector {
 
     ; 抬起
     static Up(x?, y?) {
-        if (!this._Initialized || !this._Down) {
+        if (!this._Initialized) {
             this.LastError := 87
             return false
         }
