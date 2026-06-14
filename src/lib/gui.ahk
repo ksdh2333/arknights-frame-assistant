@@ -397,7 +397,7 @@ class GuiManager {
         EventBus.Subscribe("GuiUpdateImportantControls", (*) => this._UpdateImportantControlsFromConfig())
         EventBus.Subscribe("GuiUpdateCustomControls", (*) => this._UpdateCustomControlsFromConfig())
         EventBus.Subscribe("GuiHide", (*) => this.Hide())
-        EventBus.Subscribe("KeyBindFocusSave", (*) => this.FocusSaveButton())
+        EventBus.Subscribe("KeyBindFocusCancel", (*) => this.FocusCancelButton())
         EventBus.Subscribe("GuiHideStopHook", HandleGuiHideStopHook)
         EventBus.Subscribe("CheckUpdateComplete", (*) => this.OnCheckUpdateComplete())
         EventBus.Subscribe("CheckUpdateStart", (*) => this.OnCheckUpdateStart())
@@ -465,9 +465,9 @@ class GuiManager {
         }
     }
     
-    ; 聚焦保存按钮
-    static FocusSaveButton() {
-        this.BtnSave.Focus()
+    ; 聚焦取消按钮
+    static FocusCancelButton() {
+        this.BtnCancel.Focus()
     }
     
     ; 获取窗口名称（用于WinActive等）
