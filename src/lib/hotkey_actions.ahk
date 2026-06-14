@@ -79,7 +79,8 @@ ActionPauseSelect(ThisHotkey) {
     TouchInjector.Tap(PosL.PBLX, PosL.PBLY)
     TouchInjector.Tap(xpos, ypos)
     TouchInjector.Tap(PosR.PBRX, PosR.PBRY)
-    USleep(State.CurrentDelay)
+    USleep(State.CurrentDelay * 1.5)
+    TouchInjector.Tap(xpos, ypos)
     MouseMove xpos, ypos
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -161,9 +162,10 @@ ActionPauseSkill(ThisHotkey) {
     TouchInjector.Tap(PosR.PBRX, PosR.PBRY)
     USleep(State.ClickDelay)
     Send "{e Down}"
-    USleep(State.CurrentDelay)
+    USleep(Max(State.CurrentDelay * 1.5 - State.ClickDelay, 0))
+    TouchInjector.Tap(xpos, ypos)
     MouseMove xpos, ypos
-    USleep(50 - State.CurrentDelay)
+    USleep(50)
     Send "{e Up}"
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -187,9 +189,10 @@ ActionPauseRetreat(ThisHotkey) {
     TouchInjector.Tap(PosR.PBRX, PosR.PBRY)
     USleep(State.ClickDelay)
     Send "{q Down}"
-    USleep(State.CurrentDelay)
+    USleep(Max(State.CurrentDelay * 1.5 - State.ClickDelay, 0))
+    TouchInjector.Tap(xpos, ypos)
     MouseMove xpos, ypos
-    USleep(50 - State.CurrentDelay)
+    USleep(50)
     Send "{q Up}"
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
