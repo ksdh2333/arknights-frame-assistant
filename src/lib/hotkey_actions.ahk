@@ -153,17 +153,17 @@ ActionPauseSkill(ThisHotkey) {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
     }
-    Send "{Space Down}"
-    USleep(State.CurrentDelay)
-    Send "{LButton Down}"
-    Send "{LButton Up}"
-    Send "{ESC Down}"
+    PosL := PauseButtonPositionLeft()
+    PosR := PauseButtonPositionRight()
+    MouseGetPos &xpos, &ypos
+    TouchInjector.Tap(PosL.PBLX, PosL.PBLY)
+    TouchInjector.Tap(xpos, ypos)
+    TouchInjector.Tap(PosR.PBRX, PosR.PBRY)
     USleep(State.ClickDelay)
     Send "{e Down}"
     USleep(50)
     Send "{e Up}"
-    Send "{Space Up}"
-    Send "{ESC Up}"
+    MouseMove xpos, ypos
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
@@ -178,17 +178,17 @@ ActionPauseRetreat(ThisHotkey) {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
     }
-    Send "{Space Down}"
-    USleep(State.CurrentDelay)
-    Send "{LButton Down}"
-    Send "{LButton Up}"
-    Send "{ESC Down}"
+    PosL := PauseButtonPositionLeft()
+    PosR := PauseButtonPositionRight()
+    MouseGetPos &xpos, &ypos
+    TouchInjector.Tap(PosL.PBLX, PosL.PBLY)
+    TouchInjector.Tap(xpos, ypos)
+    TouchInjector.Tap(PosR.PBRX, PosR.PBRY)
     USleep(State.ClickDelay)
     Send "{q Down}"
     USleep(50)
     Send "{q Up}"
-    Send "{Space Up}"
-    Send "{ESC Up}"
+    MouseMove xpos, ypos
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
