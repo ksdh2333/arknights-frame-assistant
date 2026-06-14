@@ -40,8 +40,13 @@ class TouchInjector {
     }
 
     static _Inject(flags) {
+        hwnd := WinExist("ahk_exe Arknights.exe")
+        pt := Buffer(8, 0)
+        NumPut("Int", this._LastX, pt, 0)
+        NumPut("Int", this._LastY, pt, 4)
+        DllCall("User32.dll\ClientToScreen", "Ptr", hwnd, "Ptr", pt)
         buf := Buffer(144, 0)
-        this._WriteFields(buf, this._LastX, this._LastY, flags)
+        this._WriteFields(buf, NumGet(pt, 0, "Int"), NumGet(pt, 4, "Int"), flags)
         result := DllCall("User32.dll\InjectTouchInput", "UInt", 1, "Ptr", buf, "Int")
         if (!result) {
             this.LastError := A_LastError
