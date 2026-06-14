@@ -79,7 +79,7 @@ ActionPauseSelect(ThisHotkey) {
     TouchInjector.Tap(PosL.PBLX, PosL.PBLY)
     TouchInjector.Tap(xpos, ypos)
     TouchInjector.Tap(PosR.PBRX, PosR.PBRY)
-    USleep(30)
+    USleep(State.CurrentDelay)
     MouseMove xpos, ypos
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -161,9 +161,10 @@ ActionPauseSkill(ThisHotkey) {
     TouchInjector.Tap(PosR.PBRX, PosR.PBRY)
     USleep(State.ClickDelay)
     Send "{e Down}"
-    USleep(50)
-    Send "{e Up}"
+    USleep(State.CurrentDelay)
     MouseMove xpos, ypos
+    USleep(50 - State.CurrentDelay)
+    Send "{e Up}"
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
@@ -186,9 +187,10 @@ ActionPauseRetreat(ThisHotkey) {
     TouchInjector.Tap(PosR.PBRX, PosR.PBRY)
     USleep(State.ClickDelay)
     Send "{q Down}"
-    USleep(50)
-    Send "{q Up}"
+    USleep(State.CurrentDelay)
     MouseMove xpos, ypos
+    USleep(50 - State.CurrentDelay)
+    Send "{q Up}"
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
@@ -491,6 +493,3 @@ CollectButtonPosition() {
 
 ; == 工具类 ==
 #Include ./touch_injection.ahk
-; TouchInjector.Down(x, y) 按下
-; TouchInjector.Up(x, y) 松开
-; TouchInjector.Tap(x, y) 点击
