@@ -73,14 +73,14 @@ ActionPauseSelect(ThisHotkey) {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
     }
-    Send "{Space Down}"
-    USleep(State.CurrentDelay)
-    Send "{LButton Down}"
-    Send "{LButton Up}"
-    Send "{ESC Down}"
-    USleep(50)
-    Send "{Space Up}"
-    Send "{ESC Up}"
+    PosL := PauseButtonPositionLeft()
+    PosR := PauseButtonPositionRight()
+    MouseGetPos &xpos, &ypos
+    TouchInjector.Tap(PosL.PBLX, PosL.PBLY)
+    TouchInjector.Tap(xpos, ypos)
+    TouchInjector.Tap(PosR.PBRX, PosR.PBRY)
+    USleep(30)
+    MouseMove xpos, ypos
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
@@ -460,6 +460,20 @@ PauseButtonPosition() {
     PButtonY := wh * 0.0666
     return {PBX: PButtonX, PBY: PButtonY}
 }
+; 获取暂停按钮左半部分位置
+PauseButtonPositionLeft() {
+    WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
+    PButtonLX := ww * 0.925
+    PButtonLY := wh * 0.0666
+    return {PBLX: PButtonLX, PBLY: PButtonLY}
+}
+; 获取暂停按钮右半部分位置
+PauseButtonPositionRight() {
+    WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
+    PButtonRX := ww * 0.970
+    PButtonRY := wh * 0.0666
+    return {PBRX: PButtonRX, PBRY: PButtonRY}
+}
 ; 获取基建收取按钮位置
 HarvestButtonPosition() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
@@ -474,3 +488,9 @@ CollectButtonPosition() {
     PButtonY := wh * 0.7250
     return {PBX: PButtonX, PBY: PButtonY}
 }
+
+; == 工具类 ==
+#Include ./touch_injection.ahk
+; TouchInjector.Down(x, y) 按下
+; TouchInjector.Up(x, y) 松开
+; TouchInjector.Tap(x, y) 点击
