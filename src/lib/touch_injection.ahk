@@ -108,6 +108,26 @@ class TouchInjector {
             return false
         return this.Up(x?, y?)
     }
+
+    ; 无按下移动
+    static Move(x?, y?) {
+        if (!this._Initialized) {
+            this.LastError := 87
+            return false
+        }
+
+        this._ResolveCoord(x?, y?)
+        if (!this._Inject(POINTER_FLAG_INRANGE | POINTER_FLAG_UPDATE))
+            return false
+        if (!this._Inject(POINTER_FLAG_UP))
+            return false
+        this._Down := false
+        return true
+    }
 }
 
+; == 初始化 ==
 TouchInjector.Init(3, 1)
+MouseGetPos &xpos, &ypos
+TouchInjector.Move(xpos, ypos)
+MouseMove xpos, ypos
