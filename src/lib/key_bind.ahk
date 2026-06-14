@@ -25,7 +25,7 @@ class KeyBinder {
         if(this.ModifyHook.InProgress) {
             this.ModifyHook.OnEnd := ""
             this.ModifyHook.Stop()
-            EventBus.Publish("KeyBindFocusSave")
+            EventBus.Publish("KeyBindFocusCancel")
         }
     }
 
@@ -57,7 +57,7 @@ class KeyBinder {
                 KeyBinder.ModifyHook.Stop()
             }
             KeyBinder.WaitingModify := false
-            EventBus.Publish("KeyBindFocusSave")
+            EventBus.Publish("KeyBindFocusCancel")
             return
         }
         ; 若有输入按键且不是鼠标左键
@@ -69,7 +69,7 @@ class KeyBinder {
                     Config.SetCustom(KeyBinder.ControlObj.Name, "")
                 else
                     Config.SetHotkey(KeyBinder.ControlObj.Name, "")
-                GuiManager.SetIsModifiedTrue()
+                GuiManager.TrackChange(KeyBinder.ControlObj.Name)
             }
             else if(pureNewkey == "LWin" OR pureNewkey == "RWin") {
                 KeyBinder.LastEditObject.Value := KeyBinder.OriginalValue
@@ -80,14 +80,14 @@ class KeyBinder {
                     Config.SetCustom(KeyBinder.ControlObj.Name, realNewkey)
                 else 
                     Config.SetHotkey(KeyBinder.ControlObj.Name, realNewkey) ; 把人不能读也不该读的东西丢给内存
-                GuiManager.SetIsModifiedTrue()
+                GuiManager.TrackChange(KeyBinder.ControlObj.Name)
             }
         }
         KeyBinder.LastEditObject := ""
         KeyBinder.WaitingModify := false
         KeyBinder.ReleaseKey :=  ""
         KeyBinder.StopHook()
-        EventBus.Publish("KeyBindFocusSave")
+        EventBus.Publish("KeyBindFocusCancel")
     }
 
     ; 格式化显示键值
@@ -330,7 +330,7 @@ WatchActiveWindow(){
             KeyBinder.WaitingModify := false
             ; 释放可能存在的Hook
             KeyBinder.StopHook()
-            EventBus.Publish("KeyBindFocusSave")
+            EventBus.Publish("KeyBindFocusCancel")
         }
     }
 }
