@@ -3,13 +3,13 @@
 ; -- 常量定义 --
 class Constants {
     ; 延迟常量
-    static Delay30 := 40      ; 30帧
-    static Delay60 := 24      ; 60帧  
-    static Delay90 := 20      ; 90帧
-    static Delay120 := 18      ; 120帧
-    static Delay144 := 16      ; 144帧  
-    static Delay165 := 14      ; 165帧
-    static Delay240 := 10      ; 240帧
+    static Delay30 := 34      ; 30帧
+    static Delay60 := 17      ; 60帧  
+    static Delay90 := 12      ; 90帧
+    static Delay120 := 9      ; 120帧
+    static Delay144 := 8      ; 144帧  
+    static Delay165 := 7      ; 165帧
+    static Delay240 := 5      ; 240帧
 
     ; 按键名称映射
     static KeyNames := Map(
@@ -33,6 +33,7 @@ class Constants {
         "Back", "返回上级菜单",
         "Harvest", "基建快速收取",
         "CollectCollectibles", "肉鸽收取道具",
+        "SwitchView", "视角切换",
         ; 卫戍协议按键
         "CheckEnemies", "查看敌人",
         "DispatchCenter", "调度中心",  ; 不知道舟里的调度中心指的是哪种调度中心，随便选了一个译名
@@ -101,6 +102,7 @@ class Config {
         "Back", "",
         "Harvest", "",
         "CollectCollectibles", "",
+        "SwitchView", "",
         ; 卫戍协议按键
         "CheckEnemies", "w",
         "DispatchCenter", "a",
