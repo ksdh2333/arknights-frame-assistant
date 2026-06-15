@@ -483,22 +483,22 @@ IsMouseInClient() {
 ; 获取暂停按钮位置
 PauseButtonPosition() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    PButtonX := ww * 0.9442
-    PButtonY := wh * 0.0666
+    PButtonX := ww * 0.9525
+    PButtonY := wh * 0.0700
     return {PBX: PButtonX, PBY: PButtonY}
 }
 ; 获取暂停按钮左半部分位置
 PauseButtonPositionLeft() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    PButtonLX := ww * 0.925
-    PButtonLY := wh * 0.0666
+    PButtonLX := ww * 0.9400
+    PButtonLY := wh * 0.0700
     return {PBLX: PButtonLX, PBLY: PButtonLY}
 }
 ; 获取暂停按钮右半部分位置
 PauseButtonPositionRight() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    PButtonRX := ww * 0.970
-    PButtonRY := wh * 0.0666
+    PButtonRX := ww * 0.9650
+    PButtonRY := wh * 0.0700
     return {PBRX: PButtonRX, PBRY: PButtonRY}
 }
 ; 获取基建收取按钮位置
