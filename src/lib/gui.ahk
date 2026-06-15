@@ -188,6 +188,7 @@ class GuiManager {
         this.QuickControls.Push(AddBindRow("跳过招募动画/剧情", "Skip")*)
         this.QuickControls.Push(AddBindRow("肉鸽收取道具", "CollectCollectibles")*)
         this.QuickControls.Push(AddBindRow("返回上级菜单", "Back")*)
+        this.QuickControls.Push(AddBindRow("视角切换", "SwitchView")*)
         ; 空白占位
         placeholderQuick := this.MainGui.Add("Text", "xs+45 y+-10 w90 h0 Right +0x200")
         this.QuickControls.Push(placeholderQuick)
