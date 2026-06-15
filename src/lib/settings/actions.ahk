@@ -23,6 +23,7 @@ HandleSettingsReset(*) {
         EventBus.Publish("SetSwitchKey")
         ; 清除GUI的已修改状态
         GuiManager.SetIsModifiedFalse()
+        GuiManager.CaptureInitialSnapshot()
     }
 }
 
@@ -40,6 +41,7 @@ HandleSettingsSave(*) {
     EventBus.Publish("GuiHide")
     ; 清除GUI的已修改状态
     GuiManager.SetIsModifiedFalse()
+    GuiManager.CaptureInitialSnapshot()
     MessageBox.Info("设置已保存！后续可双击右下角托盘区图标或通过右键菜单打开设置", "保存成功")
 }
 
@@ -56,6 +58,7 @@ HandleSettingsApply(*) {
     Saver.ResetGameStateIfNeeded()
     ; 清除GUI的已修改状态
     GuiManager.SetIsModifiedFalse()
+    GuiManager.CaptureInitialSnapshot()
     MessageBox.Info("设置已应用！", "应用成功")
 }
 
@@ -68,6 +71,7 @@ HandleSettingsCancel(*) {
     EventBus.Publish("GuiUpdateCustomControls")
     ; 清除GUI的已修改状态
     GuiManager.SetIsModifiedFalse()
+    GuiManager.CaptureInitialSnapshot()
     ; 通过事件总线通知GUI隐藏
     EventBus.Publish("GuiHide")
 }

@@ -14,6 +14,8 @@ class GuiManager {
     static ClickDelay := ""
     static SwitchHotkey := ""
     static IsModified := false
+    static _InitialValues := Map()  ; 初始值快照，用于脏值对比
+    static HintUnsaved := ""       ; "修改尚未保存或应用！"提示文字
     static IsOnStrongHoldProtocol := false
     static DefaultTab := ""
     
@@ -157,7 +159,7 @@ class GuiManager {
         ; 游戏内帧率设置
         txtFrame := this.MainGui.Add("Text", "x45 y+20 w90 Right", "游戏内帧率")
         this.GuiFrame := this.MainGui.Add("DropDownList", "x+20 y+-18 w120 vFrame AltSubmit", ["30", "60", "90", "120", "144", "165", "240"])
-        this.GuiFrame.OnEvent("Change", (*) => this.SetIsModifiedTrue())
+        this.GuiFrame.OnEvent("Change", (*) => this.TrackChange("Frame"))
         this.MainGui["Frame"].Value := Config.GetImportant("Frame")
         this.NotOtherControls.Push(txtFrame)
         this.NotOtherControls.Push(this.GuiFrame)
@@ -186,6 +188,7 @@ class GuiManager {
         this.QuickControls.Push(AddBindRow("跳过招募动画/剧情", "Skip")*)
         this.QuickControls.Push(AddBindRow("肉鸽收取道具", "CollectCollectibles")*)
         this.QuickControls.Push(AddBindRow("返回上级菜单", "Back")*)
+        this.QuickControls.Push(AddBindRow("视角切换", "SwitchView")*)
         ; 空白占位
         placeholderQuick := this.MainGui.Add("Text", "xs+45 y+-10 w90 h0 Right +0x200")
         this.QuickControls.Push(placeholderQuick)
@@ -246,22 +249,22 @@ class GuiManager {
         this.OtherSettingsControls.Push(sepLaunchTxt)
         ; 自动关闭
         checkboxAutoExit := this.MainGui.Add("Checkbox", "x" this.GuiXMargin " y+10 h24 vAutoExit", " 随游戏进程关闭自动退出（强烈建议开启）")
-        checkboxAutoExit.OnEvent("Click", (*) => this.SetIsModifiedTrue())
+        checkboxAutoExit.OnEvent("Click", (*) => this.TrackChange("AutoExit"))
         this.MainGui["AutoExit"].Value := Config.GetImportant("AutoExit")
         this.OtherSettingsControls.Push(checkboxAutoExit)
         ; 自动打开设置
         checkboxAutoOpenSettings := this.MainGui.Add("Checkbox", "x" this.GuiXMargin " y+10 h24 vAutoOpenSettings", " 启动时打开设置窗口")
-        checkboxAutoOpenSettings.OnEvent("Click", (*) => this.SetIsModifiedTrue())
+        checkboxAutoOpenSettings.OnEvent("Click", (*) => this.TrackChange("AutoOpenSettings"))
         this.MainGui["AutoOpenSettings"].Value := Config.GetImportant("AutoOpenSettings")
         this.OtherSettingsControls.Push(checkboxAutoOpenSettings)
         ; 默认启动卫戍协议方案
         checkboxDefaultStrongHoldProtocol := this.MainGui.Add("Checkbox", "x" this.GuiXMargin " y+10 h24 vDefaultStrongHoldProtocol", " 默认启动卫戍协议方案")
-        checkboxDefaultStrongHoldProtocol.OnEvent("Click", (*) => this.SetIsModifiedTrue())
+        checkboxDefaultStrongHoldProtocol.OnEvent("Click", (*) => this.TrackChange("DefaultStrongHoldProtocol"))
         this.MainGui["DefaultStrongHoldProtocol"].Value := Config.GetImportant("DefaultStrongHoldProtocol")
         this.OtherSettingsControls.Push(checkboxDefaultStrongHoldProtocol)
         ; 自动启动游戏
         checkboxAutoRunGame := this.MainGui.Add("Checkbox", "x" this.GuiXMargin " y+10 h24 vAutoRunGame", " 同时启动明日方舟")
-        checkboxAutoRunGame.OnEvent("Click", (*) => this.SetIsModifiedTrue())
+        checkboxAutoRunGame.OnEvent("Click", (*) => this.TrackChange("AutoRunGame"))
         this.MainGui["AutoRunGame"].Value := Config.GetImportant("AutoRunGame")
         this.OtherSettingsControls.Push(checkboxAutoRunGame)
         ; 识别游戏路径
@@ -273,7 +276,7 @@ class GuiManager {
         ; 游戏路径
         txtGamePath := this.MainGui.Add("Text", "x" this.GuiXMargin +17 " y+10 h24", " 游戏路径: ")
         editGamePath := this.MainGui.Add("Edit", "x+10 yp-2 w576 h20 vGamePath -Multi +0x1", Config.GetImportant("GamePath"))
-        editGamePath.OnEvent("Change", (*) => this.SetIsModifiedTrue())
+        editGamePath.OnEvent("Change", (*) => this.TrackChange("GamePath"))
         this.OtherSettingsControls.Push(txtGamePath)
         this.OtherSettingsControls.Push(editGamePath)
         this.MainGui.Add("Text", "yp+30 w0 h0")
@@ -286,13 +289,13 @@ class GuiManager {
         ; 更新渠道
         txtUpdateChannel := this.MainGui.Add("Text", "x" this.GuiXMargin " y+10", "更新渠道")
         dropdownUpdateChannel := this.MainGui.Add("DropDownList", "x+10 yp-2 w120 vUpdateChannel AltSubmit", ["正式版", "测试版"])
-        dropdownUpdateChannel.OnEvent("Change", (*) => this.SetIsModifiedTrue())
+        dropdownUpdateChannel.OnEvent("Change", (*) => this.TrackChange("UpdateChannel"))
         dropdownUpdateChannel.Value := Config.GetImportant("UpdateChannel")
         this.OtherSettingsControls.Push(txtUpdateChannel)
         this.OtherSettingsControls.Push(dropdownUpdateChannel)
         ; 自动检查更新
         checkboxAutoUpdate := this.MainGui.Add("Checkbox", "x" this.GuiXMargin " y+10 h24 vAutoUpdate", " 自动检查更新")
-        checkboxAutoUpdate.OnEvent("Click", (*) => this.SetIsModifiedTrue())
+        checkboxAutoUpdate.OnEvent("Click", (*) => this.TrackChange("AutoUpdate"))
         this.MainGui["AutoUpdate"].Value := Config.GetImportant("AutoUpdate")
         this.OtherSettingsControls.Push(checkboxAutoUpdate)
         ; 手动检查更新
@@ -304,10 +307,11 @@ class GuiManager {
         this.OtherSettingsControls.Push(this.BtnManualDownload)
         ; github token
         checkboxUseGitHubToken := this.MainGui.Add("Checkbox", "x" this.GuiXMargin " y+10 h24 vUseGitHubToken", " 使用GitHub Token: ")
-        checkboxUseGitHubToken.OnEvent("Click", (*) => this.SetIsModifiedTrue())
+        checkboxUseGitHubToken.OnEvent("Click", (*) => this.TrackChange("UseGitHubToken"))
         this.MainGui["UseGitHubToken"].Value := Config.GetImportant("UseGitHubToken")
         checkboxUseGitHubToken.OnEvent("Click", (*) => this.SetEditDisabled(editGithubToken, checkboxUseGitHubToken.Value))
         editGithubToken := this.MainGui.Add("Edit", "x+10 yp+2 w515 h20 vGitHubToken Password -Multi +0x1", Config.GetImportant("GitHubToken"))
+        editGithubToken.OnEvent("Change", (*) => this.TrackChange("GitHubToken"))
         this.SetEditDisabled(editGithubToken, checkboxUseGitHubToken.Value)
         hintGithubToken := this.MainGui.Add("Text", "xs+50 y+6 c9c9c9c", "只要没有提示API配额超限，就不需要使用GitHub Token")
         this.OtherSettingsControls.Push(checkboxUseGitHubToken)
@@ -323,7 +327,7 @@ class GuiManager {
         ; 点击延迟设置
         txtClickDelay := this.MainGui.Add("Text", "x" this.GuiXMargin " y+10 Section", "点击延迟")
         this.ClickDelay := this.MainGui.Add("Edit", "x+15 y+-18 w120 h21 vClickDelay Number", Config.GetCustom("ClickDelay"))
-        this.ClickDelay.OnEvent("Change", (*) => this.SetIsModifiedTrue())
+        this.ClickDelay.OnEvent("Change", (*) => this.TrackChange("ClickDelay"))
         updownClickDelay := this.MainGui.Add("UpDown", ,Config.GetCustom("ClickDelay"))
         hintClickDelay := this.MainGui.Add("Text", "x+15 ys c9c9c9c", "从选中单位到按下【技能】【撤退】【出售】的间隔，单位为毫秒，太短点击会失灵")
         this.OtherSettingsControls.Push(txtClickDelay)
@@ -346,13 +350,14 @@ class GuiManager {
         this.BtnDefaultHotkeys := this.MainGui.Add("Button", "x" BtnX_DefaultHotkeys " y+20 w" this.BtnW " h32", "重置按键") ; 仅在按键相关标签下显示
         this.BtnDefaultHotkeys.OnEvent("Click", (*) => EventBus.Publish("SettingsReset"))
         this.NotOtherControls.Push(this.BtnDefaultHotkeys)
-        
-        this.BtnSave := this.MainGui.Add("Button", "x" BtnX_Save " yp w" this.BtnW " h32 Default", "保存并关闭")
+
+        this.BtnSave := this.MainGui.Add("Button", "x" BtnX_Save " yp w" this.BtnW " h32 Default Disabled", "保存并关闭")
         this.BtnSave.OnEvent("Click", (*) => EventBus.Publish("SettingsSave"))
-        this.BtnApply := this.MainGui.Add("Button", "x" BtnX_Apply " yp w" this.BtnW " h32 Default", "应用设置")
+        this.BtnApply := this.MainGui.Add("Button", "x" BtnX_Apply " yp w" this.BtnW " h32 Default Disabled", "应用设置")
         this.BtnApply.OnEvent("Click", (*) => EventBus.Publish("SettingsApply"))
         this.BtnCancel := this.MainGui.Add("Button", "x" BtnX_Cancel " yp w" this.BtnW " h32", "取消")
         this.BtnCancel.OnEvent("Click", (*) => EventBus.Publish("SettingsCancel"))
+        this.HintUnsaved := this.MainGui.Add("Text", "x" (BtnX_Save - 145) " yp+8 w140 h24 Right cFF0000 Hidden", "修改尚未保存或应用！")
 
         ; 空白占位
         this.MainGui.Add("Text", "xm y+15 w1 h1")
@@ -393,7 +398,7 @@ class GuiManager {
         EventBus.Subscribe("GuiUpdateImportantControls", (*) => this._UpdateImportantControlsFromConfig())
         EventBus.Subscribe("GuiUpdateCustomControls", (*) => this._UpdateCustomControlsFromConfig())
         EventBus.Subscribe("GuiHide", (*) => this.Hide())
-        EventBus.Subscribe("KeyBindFocusSave", (*) => this.FocusSaveButton())
+        EventBus.Subscribe("KeyBindFocusCancel", (*) => this.FocusCancelButton())
         EventBus.Subscribe("GuiHideStopHook", HandleGuiHideStopHook)
         EventBus.Subscribe("CheckUpdateComplete", (*) => this.OnCheckUpdateComplete())
         EventBus.Subscribe("CheckUpdateStart", (*) => this.OnCheckUpdateStart())
@@ -423,6 +428,8 @@ class GuiManager {
     ; 显示GUI窗口
     static Show() {
         this.MainGui.Show()
+        this.CaptureInitialSnapshot()
+        this.SetIsModifiedFalse()  ; 确保按钮为禁用状态
         this.BtnSave.Focus()
         if (IsSet(WatchActiveWindow)) {
             SetTimer WatchActiveWindow, 50
@@ -459,9 +466,9 @@ class GuiManager {
         }
     }
     
-    ; 聚焦保存按钮
-    static FocusSaveButton() {
-        this.BtnSave.Focus()
+    ; 聚焦取消按钮
+    static FocusCancelButton() {
+        this.BtnCancel.Focus()
     }
     
     ; 获取窗口名称（用于WinActive等）
@@ -482,6 +489,9 @@ class GuiManager {
         if (this.IsModified == true)
             return
         this.IsModified := true
+        try this.HintUnsaved.Visible := true
+        try this.BtnSave.Opt("-Disabled")
+        try this.BtnApply.Opt("-Disabled")
     }
 
     ; 将修改状态改为未修改
@@ -489,6 +499,70 @@ class GuiManager {
         if (this.IsModified == false)
             return
         this.IsModified := false
+        try this.HintUnsaved.Visible := false
+        try this.BtnSave.Opt("+Disabled")
+        try this.BtnApply.Opt("+Disabled")
+    }
+
+    ; 捕获初始值快照（从当前 GUI 控件值读取）
+    static CaptureInitialSnapshot() {
+        this._InitialValues := Map()
+        ; 热键控件 — GUI 显示的是 VirtualNewkeyFormat 后的值
+        for key in Config.AllHotkeys {
+            try {
+                this._InitialValues[key] := this.MainGui[key].Value
+            }
+        }
+        ; Important 设置
+        for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken"] {
+            try {
+                this._InitialValues[key] := this.MainGui[key].Value
+            }
+        }
+        ; Custom 设置
+        try {
+            this._InitialValues["SwitchHotkey"] := this.MainGui["SwitchHotkey"].Value
+        }
+        try {
+            this._InitialValues["ClickDelay"] := this.MainGui["ClickDelay"].Value
+        }
+    }
+
+    ; 跟踪控件变更——与初始快照对比，决定按钮启用/禁用
+    static TrackChange(controlName) {
+        try {
+            currentValue := this.MainGui[controlName].Value
+        } catch {
+            return
+        }
+        if (this._InitialValues.Has(controlName) && currentValue == this._InitialValues[controlName]) {
+            ; 该控件值已恢复初始——检查所有控件是否全部一致
+            for key in Config.AllHotkeys {
+                try {
+                    if (this.MainGui[key].Value != this._InitialValues[key])
+                        return
+                }
+            }
+            for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken"] {
+                try {
+                    if (this.MainGui[key].Value != this._InitialValues[key])
+                        return
+                }
+            }
+            try {
+                if (this.MainGui["SwitchHotkey"].Value != this._InitialValues["SwitchHotkey"])
+                    return
+            }
+            try {
+                if (this.MainGui["ClickDelay"].Value != this._InitialValues["ClickDelay"])
+                    return
+            }
+            ; 全部一致
+            this.SetIsModifiedFalse()
+        } else {
+            ; 有差异
+            this.SetIsModifiedTrue()
+        }
     }
 
     ; 内部：隐藏所有标签页的控件
@@ -672,8 +746,9 @@ class GuiManager {
         ; 更新UI
         this._UpdateTabUI(tabName)
 
-        ; 将修改状态改回未修改
+        ; 将修改状态改回未修改，并刷新快照
         this.SetIsModifiedFalse()
+        this.CaptureInitialSnapshot()
     }
 }
 
