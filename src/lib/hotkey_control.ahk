@@ -38,6 +38,7 @@ class HotkeyController {
         "Harvest", ActionHarvest,
         "CollectCollectibles", ActionCollectCollectibles,
         "SwitchView", ActionSwitchView,
+        "BeginPause", ActionBeginPause,
         "CheckEnemies", ActionCheckEnemies,
         "DispatchCenter", ActionDispatchCenter,
         "Freeze", ActionFreeze,
@@ -65,7 +66,9 @@ class HotkeyController {
         "OneClickSkill", true,
         "OneClickRetreat", true,
         "PauseSkill", true,
-        "PauseRetreat", true
+        "PauseRetreat", true,
+        "SwitchView", true,
+        "BeginPause", true
     )
 
     static QuickHotkeys := Map(
@@ -74,8 +77,7 @@ class HotkeyController {
         "Skip", true,
         "Back", true,
         "Harvest", true,
-        "CollectCollectibles", true,
-        "SwitchView", true
+        "CollectCollectibles", true
     )
 
     static StrongHoldHotkeys := Map(
