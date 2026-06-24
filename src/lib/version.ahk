@@ -2,7 +2,7 @@
 
 class Version {
     ; AFA当前版本号
-    static Number := "v1.5.2"
+    static Number := "v1.5.3"
     
     ; 获取版本号
     static Get() {
