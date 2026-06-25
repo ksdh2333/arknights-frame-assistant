@@ -231,7 +231,8 @@ ActionBeginPause(ThisHotkey) {
         return
     }
     PosC := PauseButtonPositionColor()
-    while(GetKeyState(ThisHotkey, "P")) {
+    pureKey := RegExReplace(ThisHotkey, "^[~*$!^+#&<>()]+")
+    while(GetKeyState(pureKey, "P")) {
         if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBY, PosC.PBCLX, PosC.PBY, 0xB5B2B2, 25)
         {
             Send "{ESC Down}"
