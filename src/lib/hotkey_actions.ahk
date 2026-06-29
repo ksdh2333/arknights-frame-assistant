@@ -233,7 +233,7 @@ ActionBeginPause(ThisHotkey) {
     PosC := PauseButtonPositionColor()
     pureKey := RegExReplace(ThisHotkey, "^[~*$!^+#&<>()]+")
     while(GetKeyState(pureKey, "P")) {
-        if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBY, PosC.PBCLX, PosC.PBY, 0xB5B2B2, 25)
+        if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBY, PosC.PBCRX, PosC.PBY, 0xFFFFFF, 25)
         {
             Send "{ESC Down}"
             USleep(50)
@@ -528,10 +528,10 @@ PauseButtonPositionRight() {
 ; 获取暂停按钮颜色识别位置
 PauseButtonPositionColor() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    PButtonCLX := ww * 0.9396
-    PButtonCRX := ww * 0.9511
-    PButtonY := wh * 0.0700
-    return {PBCLX: PButtonCLX, PBCRX: PButtonCRX, PBY: PButtonY}
+    PButtonCLX := ww * 0.9473
+    PButtonCRX := ww * 0.9531
+    PButtonY := wh * 0.0600
+    return {PBCLX: PButtonCLX, PBCRX: PButtonCRX,PBY: PButtonY}
 }
 ; 获取基建收取按钮位置
 HarvestButtonPosition() {
