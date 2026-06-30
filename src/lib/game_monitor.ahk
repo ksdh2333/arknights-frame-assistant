@@ -18,47 +18,37 @@ CheckGameStatus() {
 
     ; 自动开局暂停
     if (Config.GetImportant("AutoBeginPause") == "1" && WinActive("ahk_exe Arknights.exe")) {
-        ; 寻找黑屏
+        ; 寻找黑屏：遍历 17 个全屏采样点，全部为黑色才判定黑屏
         if (State.BlackScreenDetected == false) {
             try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
-            ; 四点寻找黑屏
-            PosBSP := BlackScreenPointPosition()
-            if PixelSearch(&FoundX, &FoundY, PosBSP.AX, PosBSP.AY, PosBSP.AX, PosBSP.AY, 0x050505, 3) {
-                if PixelSearch(&FoundX, &FoundY, PosBSP.BX, PosBSP.BY, PosBSP.BX, PosBSP.BY, 0x050505, 3) {
-                    if PixelSearch(&FoundX, &FoundY, PosBSP.CX, PosBSP.CY, PosBSP.CX, PosBSP.CY, 0x050505, 3) {
-                        if PixelSearch(&FoundX, &FoundY, PosBSP.DX, PosBSP.DY, PosBSP.DX, PosBSP.DY, 0x050505, 3) {
-                            State.BlackScreenDetected := true
-                            SetTimer StopSearchLoading, -8000
-                            SetTimer CheckGameStatus, 500
-                        }
-                    }
+            allBlack := true
+            for point in BlackScreenPoints() {
+                if !PixelSearch(&FoundX, &FoundY, point.x, point.y, point.x, point.y, 0x050505, 3) {
+                    allBlack := false
+                    break
                 }
-            } else {
-                ToolTip("并非黑屏")
-                State.BlackScreenDetected := false
+            }
+            if (allBlack) {
+                State.BlackScreenDetected := true
+                SetTimer StopSearchLoading, -8000
+                SetTimer CheckGameStatus, 500
             }
             try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         }
-        ; 识别Loading
+        ; 识别 Loading：通过 Loading... 文字区域颜色判断场景类型
         if (State.BlackScreenDetected == true && State.ReadyForPause == false) {
             try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
-            ToolTip("黑屏了，可能在进关卡？")
             PosL := LoadingPosition()
             if PixelSearch(&FoundX, &FoundY, PosL.PLLX, PosL.PLY, PosL.PLRX, PosL.PLY, 0xA60000, 50) {
-                ToolTip("怎么是进入关卡的红色？")
                 State.BlackScreenDetected := false
-                try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
             } else if PixelSearch(&FoundX, &FoundY, PosL.PLLX, PosL.PLY, PosL.PLRX, PosL.PLY, 0x0070a3, 50){
-                ToolTip("怎么是进入关卡的蓝色？")
                 State.BlackScreenDetected := false
-                try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
             } else if PixelSearch(&FoundX, &FoundY, PosL.PLLX, PosL.PLY, PosL.PLRX, PosL.PLY, 0xFFFFFF, 0) {
-                ToolTip("检测到白色！")
                 State.ReadyForPause := true
                 SetTimer StopSearchLoading, 0
-                try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
                 SetTimer ActionBeginPause, -2000
             }
+            try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         }
     }
 }
