@@ -224,30 +224,23 @@ ActionSwitchView(ThisHotkey) {
     try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
 }
 ; 开局暂停
-ActionBeginPause(ThisHotkey) {
+ActionBeginPause() {
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
-    if !IsMouseInClient() {
-        try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
-        return
-    }
     PosC := PauseButtonPositionColor()
-    pureKey := RegExReplace(ThisHotkey, "^[~*$!^+#&<>()]+")
-    while(GetKeyState(pureKey, "P")) {
-        ToolTip("还在识别！")
-        if PixelSearch(&FoundX, &FoundY, PosC.PBCX, PosC.PBCY, PosC.PBCX, PosC.PBCY, 0xFFFFFF, 0)
+    while(true) {
+        ;ToolTip("正在识别按钮！")  ; 调试代码
+        if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCY, PosC.PBCLX, PosC.PBCY, 0xc8c8c8, 10)
         {
             Send "{ESC Down}"
             USleep(50)
             Send "{ESC Up}"
-            ToolTip("已严肃暂停")
+            ToolTip("已严肃暂停")  ; 调试代码
+            State.BlackScreenDetected := false
+            State.ReadyForPause := false
+            SetTimer CheckGameStatus, 1000
             break
         }
     }
-    if InStr(ThisHotkey, "Wheel") {
-        try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
-        return
-    }
-    PureKeyWait(ThisHotkey)
     try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
 }
 
@@ -530,9 +523,10 @@ PauseButtonPositionRight() {
 ; 获取暂停按钮颜色识别位置
 PauseButtonPositionColor() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    PButtonCX := ww * 0.9375
-    PButtonCY := wh * 0.058157
-    return {PBCX: PButtonCX, PBCY: PButtonCY}
+    PButtonCLX := ww * 0.9375
+    PButtonCRX := ww * 0.9473
+    PButtonCY := wh * 0.0600
+    return {PBCLX: PButtonCLX, PBCRX: PButtonCRX, PBCY: PButtonCY}
 }
 ; 获取基建收取按钮位置
 HarvestButtonPosition() {
