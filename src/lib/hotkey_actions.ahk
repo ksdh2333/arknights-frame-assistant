@@ -202,6 +202,48 @@ ActionPauseRetreat(ThisHotkey) {
     try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
 }
 
+; 视角切换
+ActionSwitchView(ThisHotkey) {
+    try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
+    if !IsMouseInClient() {
+        try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
+        return
+    }
+    PosL := PauseButtonPositionLeft()
+    PosR := PauseButtonPositionRight()
+    MouseGetPos &xpos, &ypos
+    TouchInjector.Tap(PosL.PBLX, PosL.PBLY)
+    TouchInjector.Tap(xpos, ypos)
+    TouchInjector.Tap(PosR.PBRX, PosR.PBRY)
+    TouchInjector.Tap(xpos, ypos)
+    if InStr(ThisHotkey, "Wheel") {
+        try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
+        return
+    }
+    PureKeyWait(ThisHotkey)
+    try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
+}
+; 开局暂停
+ActionBeginPause() {
+    try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
+    PosC := PauseButtonPositionColor()
+    while(true) {
+        ;ToolTip("正在识别按钮！")  ; 调试代码
+        if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCY, PosC.PBCLX, PosC.PBCY, 0xd8d8d8, 10)
+        {
+            Send "{ESC Down}"
+            USleep(50)
+            Send "{ESC Up}"
+            ;ToolTip("已严肃暂停")  ; 调试代码
+            State.BlackScreenDetected := false
+            State.ReadyForPause := false
+            SetTimer CheckGameStatus, 1000
+            break
+        }
+    }
+    try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
+}
+
 ; -- 快捷操作 --
 ; 模拟鼠标左键点击
 ActionLButtonClick(ThisHotkey) {
@@ -314,29 +356,6 @@ ActionCollectCollectibles(ThisHotkey){
     PureKeyWait(ThisHotkey)
     try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
 }
-; 视角切换
-ActionSwitchView(ThisHotkey) {
-    try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
-    if !IsMouseInClient() {
-        try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
-        return
-    }
-    PosL := PauseButtonPositionLeft()
-    PosR := PauseButtonPositionRight()
-    MouseGetPos &xpos, &ypos
-    TouchInjector.Tap(PosL.PBLX, PosL.PBLY)
-    TouchInjector.Tap(xpos, ypos)
-    TouchInjector.Tap(PosR.PBRX, PosR.PBRY)
-    TouchInjector.Tap(xpos, ypos)
-    if InStr(ThisHotkey, "Wheel") {
-        try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
-        return
-    }
-    PureKeyWait(ThisHotkey)
-    try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
-}
-
-
 ; -- 卫戍协议 --
 ; 查看敌人
 ActionCheckEnemies(ThisHotkey) {
@@ -483,23 +502,31 @@ IsMouseInClient() {
 ; 获取暂停按钮位置
 PauseButtonPosition() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    PButtonX := ww * 0.9442
-    PButtonY := wh * 0.0666
+    PButtonX := ww * 0.9525
+    PButtonY := wh * 0.0700
     return {PBX: PButtonX, PBY: PButtonY}
 }
 ; 获取暂停按钮左半部分位置
 PauseButtonPositionLeft() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    PButtonLX := ww * 0.925
-    PButtonLY := wh * 0.0666
+    PButtonLX := ww * 0.9400
+    PButtonLY := wh * 0.0700
     return {PBLX: PButtonLX, PBLY: PButtonLY}
 }
 ; 获取暂停按钮右半部分位置
 PauseButtonPositionRight() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    PButtonRX := ww * 0.970
-    PButtonRY := wh * 0.0666
+    PButtonRX := ww * 0.9650
+    PButtonRY := wh * 0.0700
     return {PBRX: PButtonRX, PBRY: PButtonRY}
+}
+; 获取暂停按钮颜色识别位置
+PauseButtonPositionColor() {
+    WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
+    PButtonCLX := ww * 0.9375
+    PButtonCRX := ww * 0.9473
+    PButtonCY := wh * 0.0600
+    return {PBCLX: PButtonCLX, PBCRX: PButtonCRX, PBCY: PButtonCY}
 }
 ; 获取基建收取按钮位置
 HarvestButtonPosition() {

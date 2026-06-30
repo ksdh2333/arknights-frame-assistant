@@ -64,7 +64,7 @@ class Saver {
                        "Skill", "Retreat", "33ms", "166ms", "OneClickSkill",
                        "OneClickRetreat", "PauseSkill", "PauseRetreat",
                        "LButtonClick", "CeaseOperations", "Skip", "Back",
-                       "Harvest", "CollectCollectibles", "SwitchView"]
+                       "Harvest", "CollectCollectibles", "SwitchView", "BeginPause"]
 
         strongholdKeys := ["CheckEnemies", "DispatchCenter", "Freeze", "Refresh",
                           "Upgrade", "Sell", "Ready", "StrongHoldProtocolLButtonClick",
