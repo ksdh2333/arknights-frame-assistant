@@ -23,7 +23,7 @@ CheckGameStatus() {
             try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
             allBlack := true
             for point in BlackScreenPoints() {
-                if !PixelSearch(&FoundX, &FoundY, point.x, point.y, point.x, point.y, 0x050505, 3) {
+                if !PixelSearch(&FoundX, &FoundY, point.x, point.y, point.x, point.y, 0x000000, 10) {
                     allBlack := false
                     break
                 }
@@ -31,7 +31,7 @@ CheckGameStatus() {
             if (allBlack) {
                 State.BlackScreenDetected := true
                 SetTimer StopSearchLoading, -8000
-                SetTimer CheckGameStatus, 500
+                SetTimer CheckGameStatus, 300
             }
             try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         }
