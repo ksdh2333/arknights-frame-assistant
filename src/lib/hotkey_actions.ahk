@@ -229,7 +229,7 @@ ActionBeginPause() {
     PosC := PauseButtonPositionColor()
     while(true) {
         ;ToolTip("正在识别按钮！")  ; 调试代码
-        if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCY, PosC.PBCLX, PosC.PBCY, 0xc8c8c8, 10)
+        if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCY, PosC.PBCLX, PosC.PBCY, 0xd8d8d8, 10)
         {
             Send "{ESC Down}"
             USleep(50)
