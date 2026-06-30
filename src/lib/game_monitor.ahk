@@ -41,19 +41,14 @@ CheckGameStatus() {
             try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
             ToolTip("黑屏了，可能在进关卡？")
             scanLines := LoadingPosition()
-            for line in scanLines {
-                if PixelSearch(&FoundX, &FoundY, line.lx, line.y, line.rx, line.y, 0xA60000, 50) {
-                    ToolTip("怎么是进入关卡的红色？")
-                    State.BlackScreenDetected := false
-                    break
-                }
-                if PixelSearch(&FoundX, &FoundY, line.lx, line.y, line.rx, line.y, 0x0070a3, 50) {
-                    ToolTip("怎么是进入关卡的蓝色？")
-                    State.BlackScreenDetected := false
-                    break
-                }
-            }
-            if (State.BlackScreenDetected) {
+            line1 := scanLines[1]
+            if PixelSearch(&FoundX, &FoundY, line1.lx, line1.y, line1.rx, line1.y, 0xA60000, 50) {
+                ToolTip("怎么是进入关卡的红色？")
+                State.BlackScreenDetected := false
+            } else if PixelSearch(&FoundX, &FoundY, line1.lx, line1.y, line1.rx, line1.y, 0x0070a3, 50) {
+                ToolTip("怎么是进入关卡的蓝色？")
+                State.BlackScreenDetected := false
+            } else {
                 for line in scanLines {
                     if PixelSearch(&FoundX, &FoundY, line.lx, line.y, line.rx, line.y, 0xFFFFFF, 0) {
                         ToolTip("检测到白色！")
