@@ -27,7 +27,6 @@ class Constants {
         "PauseSkill", "暂停技能",
         "PauseRetreat", "暂停撤退",
         "SwitchView", "视角切换",
-        "BeginPause", "开局暂停",
         ; 快捷操作
         "LButtonClick", "左键点击",
         "CeaseOperations", "放弃行动",
@@ -63,7 +62,8 @@ class Constants {
         "GamePath", "游戏路径",
         "AutoRunGame", "随小助手自动启动明日方舟",
         "DismissedChangelogVersion", "已忽略公告版本",
-        "DefaultStrongHoldProtocol", "默认启动卫戍协议方案"
+        "DefaultStrongHoldProtocol", "默认启动卫戍协议方案",
+        "AutoBeginPause", "开局自动暂停"
     )
 
     ; 自定义设置名称映射
@@ -97,7 +97,6 @@ class Config {
         "PauseSkill", "XButton2",
         "PauseRetreat", "XButton1",
         "SwitchView", "",
-        "BeginPause", "",
         ; 快捷操作
         "LButtonClick", "z",
         "CeaseOperations", "",
@@ -134,7 +133,8 @@ class Config {
         "AutoRunGame", "0",
         "LastLaunchedVersion", "",
         "DismissedChangelogVersion", "",
-        "DefaultStrongHoldProtocol", "0"
+        "DefaultStrongHoldProtocol", "0",
+        "AutoBeginPause", "0"
     )
 
     ; 内部：默认自定义设置
@@ -414,7 +414,13 @@ class State {
     
     ; GUI窗口名称
     static GuiWindowName := ""
-    
+
+    ; 自动开局暂停状态
+    static ReadyForPause := false
+
+    ; 黑屏检测状态
+    static BlackScreenDetected := false
+
     ; 根据帧数设置更新延迟
     static UpdateDelay() {
         frame := Config.GetImportant("Frame")

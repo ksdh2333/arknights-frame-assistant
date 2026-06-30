@@ -135,7 +135,6 @@ class GuiManager {
         this.KeybindControls.Push(AddBindRow("暂停时选中", "PauseSelect")*)
         this.KeybindControls.Push(AddBindRow("单位技能", "Skill")*)
         this.KeybindControls.Push(AddBindRow("单位撤退", "Retreat")*)
-        this.KeybindControls.Push(AddBindRow("开局暂停", "BeginPause")*)
         
         ; 常规作战 - 右列
         this.MainGui.Add("GroupBox", "x" this.ColWidth " ys w" this.ColWidth  " h0 Section vKeybindRightGroup", "")
@@ -172,6 +171,12 @@ class GuiManager {
         this.MainGui["Frame"].Value := Config.GetImportant("Frame")
         this.NotOtherControls.Push(txtFrame)
         this.NotOtherControls.Push(this.GuiFrame)
+
+        ; 自动暂停开关
+        checkboxAutoBeginPause := this.MainGui.Add("Checkbox", "x+30 yp+2 vAutoBeginPause", " 开局自动暂停")
+        checkboxAutoBeginPause.OnEvent("Click", (*) => this.TrackChange("AutoBeginPause"))
+        this.MainGui["AutoBeginPause"].Value := Config.GetImportant("AutoBeginPause")
+        this.NotOtherControls.Push(checkboxAutoBeginPause)
 
         ; 帧数设置提示语
         this.MainGui.SetFont("s9 c1994d2")
@@ -583,7 +588,7 @@ class GuiManager {
             }
         }
         ; Important 设置
-        for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken"] {
+        for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
             try {
                 this._InitialValues[key] := this.MainGui[key].Value
             }
@@ -612,7 +617,7 @@ class GuiManager {
                         return
                 }
             }
-            for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken"] {
+            for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
                 try {
                     if (this.MainGui[key].Value != this._InitialValues[key])
                         return
