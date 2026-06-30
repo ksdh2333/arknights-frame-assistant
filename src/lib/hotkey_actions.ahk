@@ -234,7 +234,7 @@ ActionBeginPause() {
             Send "{ESC Down}"
             USleep(50)
             Send "{ESC Up}"
-            ToolTip("已严肃暂停")  ; 调试代码
+            ;ToolTip("已严肃暂停")  ; 调试代码
             State.BlackScreenDetected := false
             State.ReadyForPause := false
             SetTimer CheckGameStatus, 1000
