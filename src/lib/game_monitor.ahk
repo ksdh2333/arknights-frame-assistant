@@ -5,14 +5,14 @@ SetTimer CheckGameStatus, 1000
 ; 检查游戏状态
 CheckGameStatus() {
     ; 自动退出
-    if (Config.GetImportant("AutoExit") != "1")
-        return
-    if ProcessExist("Arknights.exe") {
-        State.GameHasStarted := true
-    }
-    else {
-        if (State.GameHasStarted == true) {
-            ExitApp
+    if (Config.GetImportant("AutoExit") == "1") {
+        if ProcessExist("Arknights.exe") {
+            State.GameHasStarted := true
+        }
+        else {
+            if (State.GameHasStarted == true) {
+                ExitApp
+            }
         }
     }
 
