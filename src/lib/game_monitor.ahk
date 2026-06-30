@@ -49,14 +49,18 @@ CheckGameStatus() {
                 ToolTip("怎么是进入关卡的蓝色？")
                 State.BlackScreenDetected := false
             } else {
+                allWhite := true
                 for line in scanLines {
-                    if PixelSearch(&FoundX, &FoundY, line.lx, line.y, line.rx, line.y, 0xFFFFFF, 0) {
-                        ToolTip("检测到白色！")
-                        State.ReadyForPause := true
-                        SetTimer StopSearchLoading, 0
-                        SetTimer ActionBeginPause, -2000
+                    if !PixelSearch(&FoundX, &FoundY, line.lx, line.y, line.rx, line.y, 0xFFFFFF, 0) {
+                        allWhite := false
                         break
                     }
+                }
+                if (allWhite) {
+                    ToolTip("检测到白色！")
+                    State.ReadyForPause := true
+                    SetTimer StopSearchLoading, 0
+                    SetTimer ActionBeginPause, -2000
                 }
             }
             try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
