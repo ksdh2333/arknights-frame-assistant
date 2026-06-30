@@ -25,7 +25,7 @@ CheckGameStatus() {
             for point in BlackScreenPoints() {
                 if !PixelSearch(&FoundX, &FoundY, point.x, point.y, point.x, point.y, 0x000000, 10) {
                     allBlack := false
-                    ToolTip("并非黑屏")
+                    ; ToolTip("并非黑屏")
                     break
                 }
             }
@@ -39,14 +39,14 @@ CheckGameStatus() {
         ; 识别 Loading：通过 Loading... 文字区域颜色判断场景类型
         if (State.BlackScreenDetected == true && State.ReadyForPause == false) {
             try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
-            ToolTip("黑屏了，可能在进关卡？")
+            ; ToolTip("黑屏了，可能在进关卡？")
             scanLines := LoadingPosition()
             line1 := scanLines[1]
             if PixelSearch(&FoundX, &FoundY, line1.lx, line1.y, line1.rx, line1.y, 0xA60000, 50) {
-                ToolTip("怎么是进入关卡的红色？")
+                ; ToolTip("怎么是进入关卡的红色？")
                 State.BlackScreenDetected := false
             } else if PixelSearch(&FoundX, &FoundY, line1.lx, line1.y, line1.rx, line1.y, 0x0070a3, 50) {
-                ToolTip("怎么是进入关卡的蓝色？")
+                ; ToolTip("怎么是进入关卡的蓝色？")
                 State.BlackScreenDetected := false
             } else {
                 allWhite := true
@@ -57,7 +57,7 @@ CheckGameStatus() {
                     }
                 }
                 if (allWhite) {
-                    ToolTip("检测到白色！")
+                    ; ToolTip("检测到白色！")
                     State.ReadyForPause := true
                     SetTimer StopSearchLoading, 0
                     SetTimer ActionBeginPause, -2000
