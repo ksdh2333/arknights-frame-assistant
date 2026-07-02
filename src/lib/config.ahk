@@ -9,6 +9,7 @@ class Constants {
     static Delay120 := 9      ; 120帧
     static Delay144 := 8      ; 144帧  
     static Delay165 := 7      ; 165帧
+    static Delay180 := 6      ; 180帧
     static Delay240 := 5      ; 240帧
 
     ; 按键名称映射
@@ -123,7 +124,7 @@ class Config {
     static _DefaultImportant := Map(
         "AutoExit", "1",
         "AutoOpenSettings", "1",
-        "Frame", "3",
+        "Frame", "90",
         "AutoUpdate", "1",
         "LastDismissedVersion", "",
         "UpdateChannel", "1",
@@ -215,6 +216,32 @@ class Config {
         this._CustomSettings[key] := value
     }
     
+    ; 帧率设置数据迁移：从旧版序号格式转换为文本值格式
+    static MigrateFrameRate() {
+        if this.IniFile = ""
+            this.InitPath()
+        if (!FileExist(this.IniFile))
+            return
+
+        migrationMap := Map(
+            "1", "30",
+            "2", "60",
+            "3", "90",
+            "4", "120",
+            "5", "144",
+            "6", "165",
+            "7", "240+"
+        )
+
+        currentValue := IniRead(this.IniFile, "Main", "Frame", "")
+        if (currentValue = "")
+            return
+
+        if migrationMap.Has(currentValue) {
+            IniWrite(migrationMap[currentValue], this.IniFile, "Main", "Frame")
+        }
+    }
+
     ; 从配置文件加载
     static LoadFromIni() {
         if this.IniFile = ""
@@ -424,19 +451,21 @@ class State {
     ; 根据帧数设置更新延迟
     static UpdateDelay() {
         frame := Config.GetImportant("Frame")
-        if (frame == "1") {
+        if (frame == "30") {
             this.CurrentDelay := Constants.Delay30
-        } else if (frame == "2") {
+        } else if (frame == "60") {
             this.CurrentDelay := Constants.Delay60
-        } else if (frame == "3") {
+        } else if (frame == "90") {
             this.CurrentDelay := Constants.Delay90
-        } else if (frame == "4") {
+        } else if (frame == "120") {
             this.CurrentDelay := Constants.Delay120
-        } else if (frame == "5") {
+        } else if (frame == "144") {
             this.CurrentDelay := Constants.Delay144
-        } else if (frame == "6") {
+        } else if (frame == "165") {
             this.CurrentDelay := Constants.Delay165
-        } else if (frame == "7") {
+        } else if (frame == "180") {
+            this.CurrentDelay := Constants.Delay180
+        } else if (frame == "240+") {
             this.CurrentDelay := Constants.Delay240
         }
     }
