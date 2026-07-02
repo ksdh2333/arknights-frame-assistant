@@ -39,6 +39,13 @@ class GuiManager {
     static UpdateControls := []        ; "更新"设置控件组
     static CustomControls := []        ; "自定义"设置控件组
     static AboutControls := []         ; "关于"页面控件组
+    ; 其他设置分类映射：分类名 → [控件组, 导航索引]
+    static OtherCategories := Map(
+        "Launch", [this.LaunchControls, 1],
+        "Update", [this.UpdateControls, 2],
+        "Custom", [this.CustomControls, 3],
+        "About", [this.AboutControls, 4]
+    )
     static NotOtherControls := [] ; 仅非其他设置相关控件
     static TxtKeybind := ""           ; "常规作战"标签文本
     static TxtQuick := ""             ; "快捷操作"标签文本
@@ -454,17 +461,8 @@ class GuiManager {
         this.MainGui.SetFont("s9 cDefault norm", "Microsoft YaHei UI")
 
         ; 隐藏非默认分类的控件
-
-        ; 隐藏非默认分类的控件
-        for ctrl in this.UpdateControls {
-            try ctrl.Visible := false
-        }
-        for ctrl in this.CustomControls {
-            try ctrl.Visible := false
-        }
-        for ctrl in this.AboutControls {
-            try ctrl.Visible := false
-        }
+        this._HideOtherCategories()
+        this._ShowControls(this.LaunchControls)  ; 默认显示"启动与退出"
 
         ; 底部按钮区域锚点，使用"常规作战"帧率提示底部 + 30px 间距
         this.MainGui.Add("Text", "xm y" this._BottomBaseY + 20 " w0 h0 Section")
@@ -724,26 +722,7 @@ class GuiManager {
                 try ctrl.Visible := false
             }
         }
-        for ctrl in this.LaunchControls {
-            if (IsObject(ctrl)) {
-                try ctrl.Visible := false
-            }
-        }
-        for ctrl in this.UpdateControls {
-            if (IsObject(ctrl)) {
-                try ctrl.Visible := false
-            }
-        }
-        for ctrl in this.CustomControls {
-            if (IsObject(ctrl)) {
-                try ctrl.Visible := false
-            }
-        }
-        for ctrl in this.AboutControls {
-            if (IsObject(ctrl)) {
-                try ctrl.Visible := false
-            }
-        }
+        this._HideOtherCategories()
     }
 
     ; 内部：显示指定控件组
@@ -751,6 +730,17 @@ class GuiManager {
         for ctrl in controls {
             if (IsObject(ctrl)) {
                 try ctrl.Visible := true
+            }
+        }
+    }
+
+    ; 内部：隐藏所有其他设置分类控件
+    static _HideOtherCategories() {
+        for _, info in this.OtherCategories {
+            for ctrl in info[1] {
+                if (IsObject(ctrl)) {
+                    try ctrl.Visible := false
+                }
             }
         }
     }
@@ -861,42 +851,14 @@ class GuiManager {
         this._ShowControls(this.OtherSettingsControls)
 
         ; 隐藏所有分类控件
-        for ctrl in this.LaunchControls {
-            try ctrl.Visible := false
-        }
-        for ctrl in this.UpdateControls {
-            try ctrl.Visible := false
-        }
-        for ctrl in this.CustomControls {
-            try ctrl.Visible := false
-        }
-        for ctrl in this.AboutControls {
-            try ctrl.Visible := false
-        }
+        this._HideOtherCategories()
 
         ; 显示目标分类控件
-        switch categoryName {
-        case "Launch":
-            for ctrl in this.LaunchControls {
-                try ctrl.Visible := true
-            }
-            targetIndex := 1
-        case "Update":
-            for ctrl in this.UpdateControls {
-                try ctrl.Visible := true
-            }
-            targetIndex := 2
-        case "Custom":
-            for ctrl in this.CustomControls {
-                try ctrl.Visible := true
-            }
-            targetIndex := 3
-        case "About":
-            for ctrl in this.AboutControls {
-                try ctrl.Visible := true
-            }
-            targetIndex := 4
+        info := this.OtherCategories[categoryName]
+        for ctrl in info[1] {
+            try ctrl.Visible := true
         }
+        targetIndex := info[2]
 
         ; 更新导航项样式
         for i, navItem in this.NavItems {
