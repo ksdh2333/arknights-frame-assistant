@@ -460,7 +460,21 @@ class GuiManager {
     static _UpdateImportantControlsFromConfig() {
         for key, value in Config.AllImportant {
             try {
-                this.MainGui[key].Value := value
+                if (key = "Frame") {
+                    ; Frame需要将文本值转为新下拉框索引
+                    frameText := Config.GetImportant("Frame")
+                    frameIndex := 3
+                    frameOptions := ["30", "60", "90", "120", "144", "165", "180", "240+"]
+                    for i, opt in frameOptions {
+                        if (opt = frameText) {
+                            frameIndex := i
+                            break
+                        }
+                    }
+                    this.MainGui[key].Value := frameIndex
+                } else {
+                    this.MainGui[key].Value := value
+                }
             }
         }
     }
