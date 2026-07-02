@@ -413,36 +413,40 @@ class GuiManager {
         this.CustomControls.Push(this.SwitchHotkey)
 
         ; 分类"关于"
-        aboutArea := this.MainGui.Add("Text", "x160 y48 w530 h1 Backgroundd0d0d0 Center Section")
-        this.AboutControls.Push(aboutArea)
-
-        logoSize := 128
+        this.MainGui.Add("Text", "x160 y48 w0 h0 Section")
+        logoSize := 256
         logoX := 160 + (530 - logoSize) / 2
-        aboutLogo := this.MainGui.Add("Picture", "x" logoX " y+20 w" logoSize " h" logoSize, A_ScriptDir "\..\logo.png")
+        aboutLogo := this.MainGui.Add("Picture", "x" logoX " y48 w" logoSize " h" logoSize, A_ScriptDir "\..\logo.png")
         this.AboutControls.Push(aboutLogo)
 
         this.MainGui.SetFont("s12 bold", "Microsoft YaHei UI")
         aboutVersion := this.MainGui.Add("Text", "xs y+10 w530 Center", Version.Get())
-        this.MainGui.SetFont("s9 norm", "Microsoft YaHei UI")
+        this.MainGui.SetFont("s9 c0645AD underline", "Microsoft YaHei UI")
         this.AboutControls.Push(aboutVersion)
 
-        aboutRepo := this.MainGui.AddLink("xs y+15 w530 Center", '<a href="https://github.com/CloudTracey/arknights-frame-assistant">GitHub仓库</a>')
-        this.AboutControls.Push(aboutRepo)
-
-        aboutFeedback := this.MainGui.AddLink("xs y+8 w530 Center", '<a href="https://github.com/CloudTracey/arknights-frame-assistant/issues">问题反馈与建议</a>')
-        this.AboutControls.Push(aboutFeedback)
-
-        this.MainGui.SetFont("s9 c0645AD underline", "Microsoft YaHei UI")
-        aboutChangelog := this.MainGui.Add("Text", "xs y+8 w530 Center", "更新公告")
+        aboutChangelog := this.MainGui.Add("Text", "xs y+15 w530 Center", "更新公告")
         aboutChangelog.OnEvent("Click", (*) => this._ShowChangelog())
-        this.MainGui.SetFont("s9 cDefault norm", "Microsoft YaHei UI")
         this.AboutControls.Push(aboutChangelog)
 
-        aboutBilibili := this.MainGui.AddLink("xs y+8 w530 Center", '<a href="https://space.bilibili.com/34961731">B站主页</a>')
+        aboutRepo := this.MainGui.Add("Text", "xs y+8 w530 Center", "GitHub仓库")
+        aboutRepo.OnEvent("Click", (*) => Run("https://github.com/CloudTracey/arknights-frame-assistant"))
+        this.AboutControls.Push(aboutRepo)
+
+        aboutFeedback := this.MainGui.Add("Text", "xs y+8 w530 Center", "反馈与建议")
+        aboutFeedback.OnEvent("Click", (*) => Run("https://github.com/CloudTracey/arknights-frame-assistant/issues"))
+        this.AboutControls.Push(aboutFeedback)
+
+        aboutBilibili := this.MainGui.Add("Text", "xs y+8 w530 Center", "我的B站主页")
+        aboutBilibili.OnEvent("Click", (*) => Run("https://space.bilibili.com/34961731"))
         this.AboutControls.Push(aboutBilibili)
 
-        aboutArtist := this.MainGui.AddLink("xs y+8 w530 Center", '<a href="https://www.mihuashi.com/profiles/8282001?role=painter">图标画师</a>')
+        aboutArtist := this.MainGui.Add("Text", "xs y+8 w530 Center", "图标画师")
+        aboutArtist.OnEvent("Click", (*) => Run("https://www.mihuashi.com/profiles/8282001?role=painter"))
         this.AboutControls.Push(aboutArtist)
+
+        this.MainGui.SetFont("s9 cDefault norm", "Microsoft YaHei UI")
+
+        ; 隐藏非默认分类的控件
 
         ; 隐藏非默认分类的控件
         for ctrl in this.UpdateControls {
