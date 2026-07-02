@@ -94,6 +94,26 @@
 
 ---
 
+## 追加测试（重构：WM_LBUTTONDOWN Map查找 + FrameSkipDelayKeys集中管理）
+
+> 对应更改：6个控件名OR链改为Map.Has()查找；CaptureInitialSnapshot和TrackChange中3个重复try块改为循环遍历FrameSkipDelayKeys列表
+
+### 回归：按键录制排除项
+
+- [x] 验证：点击 GitHubToken 输入框 → 不触发按键录制
+- [x] 验证：点击 GamePath 输入框 → 不触发按键录制
+- [x] 验证：点击 ClickDelay 输入框 → 不触发按键录制
+- [x] 验证：点击过帧档位1/2/3 输入框 → 不触发按键录制
+- [x] 验证：点击前进16ms/33ms/166ms 热键输入框 → 正常触发按键录制
+
+### 回归：脏值对比（CaptureInitialSnapshot + TrackChange）
+
+- [x] 验证：修改过帧档位1/2/3 的值，"保存并关闭"和"应用设置"按钮正确启用
+- [x] 验证：恢复修改前的值，按钮正确禁用
+- [x] 验证："取消"后重启，值恢复原样
+
+---
+
 ## 回归测试
 
 ### 功能：原有两档过帧
