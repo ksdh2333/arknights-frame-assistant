@@ -416,7 +416,9 @@ class GuiManager {
         aboutArea := this.MainGui.Add("Text", "x160 y48 w530 h1 Backgroundd0d0d0 Center Section")
         this.AboutControls.Push(aboutArea)
 
-        aboutLogo := this.MainGui.Add("Picture", "xs y+20 w96 h96 Center Section", A_ScriptDir "\..\logo.png")
+        logoSize := 128
+        logoX := 160 + (530 - logoSize) / 2
+        aboutLogo := this.MainGui.Add("Picture", "x" logoX " y+20 w" logoSize " h" logoSize, A_ScriptDir "\..\logo.png")
         this.AboutControls.Push(aboutLogo)
 
         this.MainGui.SetFont("s12 bold", "Microsoft YaHei UI")
@@ -424,10 +426,10 @@ class GuiManager {
         this.MainGui.SetFont("s9 norm", "Microsoft YaHei UI")
         this.AboutControls.Push(aboutVersion)
 
-        aboutRepo := this.MainGui.AddLink("xs y+15 w530 Center", '仓库：<a href="https://github.com/CloudTracey/arknights-frame-assistant">GitHub</a>')
+        aboutRepo := this.MainGui.AddLink("xs y+15 w530 Center", '<a href="https://github.com/CloudTracey/arknights-frame-assistant">GitHub仓库</a>')
         this.AboutControls.Push(aboutRepo)
 
-        aboutFeedback := this.MainGui.AddLink("xs y+8 w530 Center", '反馈与建议：<a href="https://github.com/CloudTracey/arknights-frame-assistant/issues">GitHub Issues</a>')
+        aboutFeedback := this.MainGui.AddLink("xs y+8 w530 Center", '<a href="https://github.com/CloudTracey/arknights-frame-assistant/issues">问题反馈与建议</a>')
         this.AboutControls.Push(aboutFeedback)
 
         this.MainGui.SetFont("s9 c0645AD underline", "Microsoft YaHei UI")
@@ -436,10 +438,10 @@ class GuiManager {
         this.MainGui.SetFont("s9 cDefault norm", "Microsoft YaHei UI")
         this.AboutControls.Push(aboutChangelog)
 
-        aboutBilibili := this.MainGui.AddLink("xs y+8 w530 Center", '<a href="https://space.bilibili.com/3546557616899844">B站主页</a>')
+        aboutBilibili := this.MainGui.AddLink("xs y+8 w530 Center", '<a href="https://space.bilibili.com/34961731">B站主页</a>')
         this.AboutControls.Push(aboutBilibili)
 
-        aboutArtist := this.MainGui.AddLink("xs y+8 w530 Center", '<a href="https://x.com/fuse_daizu">图标画师主页</a>')
+        aboutArtist := this.MainGui.AddLink("xs y+8 w530 Center", '<a href="https://www.mihuashi.com/profiles/8282001?role=painter">图标画师</a>')
         this.AboutControls.Push(aboutArtist)
 
         ; 隐藏非默认分类的控件
