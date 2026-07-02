@@ -174,9 +174,10 @@ class GuiManager {
 
         ; 游戏内帧率设置
         txtFrame := this.MainGui.Add("Text", "x45 y+20 w90 Right", "游戏内帧率")
-        this.GuiFrame := this.MainGui.Add("DropDownList", "x+20 y+-18 w120 vFrame AltSubmit", ["30", "60", "90", "120", "144", "165", "240+"])
+        this.GuiFrame := this.MainGui.Add("DropDownList", "x+20 y+-18 w120 vFrame", Constants.FrameOptions)
         this.GuiFrame.OnEvent("Change", (*) => this.TrackChange("Frame"))
-        this.MainGui["Frame"].Value := Config.GetImportant("Frame")
+        frameText := Config.GetImportant("Frame")
+        this.MainGui["Frame"].Value := this._FrameTextToIndex(frameText)
         this.NotOtherControls.Push(txtFrame)
         this.NotOtherControls.Push(this.GuiFrame)
 
@@ -504,7 +505,11 @@ class GuiManager {
     static _UpdateImportantControlsFromConfig() {
         for key, value in Config.AllImportant {
             try {
-                this.MainGui[key].Value := value
+                if (key = "Frame") {
+                    this.MainGui[key].Value := this._FrameTextToIndex(Config.GetImportant("Frame"))
+                } else {
+                    this.MainGui[key].Value := value
+                }
             }
         }
     }
@@ -723,6 +728,15 @@ class GuiManager {
             }
         }
         this._HideOtherCategories()
+    }
+
+    ; 帧率文本值→下拉框索引
+    static _FrameTextToIndex(frameText) {
+        for i, opt in Constants.FrameOptions {
+            if (opt = frameText)
+                return i
+        }
+        return 3  ; 默认"90"
     }
 
     ; 内部：显示指定控件组
