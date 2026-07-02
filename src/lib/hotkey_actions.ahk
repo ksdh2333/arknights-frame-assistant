@@ -548,20 +548,11 @@ TakeOverButtonPosition() {
             ; ToolTip ("检测到代理接管按钮")
             return true
     }
-    ; else if !PixelSearch(&FoundX, &FoundY, ww * 0.28125, wh * 0.9259, ww * 0.28125, wh * 0.9259, 0xc6c5c4, 20) {
-    ;     ToolTip ("手不对")
-    ; }
-    ; else if !PixelSearch(&FoundX, &FoundY, ww * 0.3755, wh * 0.8731,  ww * 0.3755, wh * 0.8731, 0x2e2e2e, 20) {
-    ;     ToolTip ("右上不对")
-    ; }
-    ; else if !PixelSearch(&FoundX, &FoundY, ww * 0.3755, wh * 0.9259,  ww * 0.3755, wh * 0.9259, 0x2e2e2e, 20) {
-    ;     ToolTip ("右下不对")
-    ; }
     ; else {
     ;     hc := PixelGetColor(ww * 0.28125, wh * 0.9259)
     ;     uc := PixelGetColor(ww * 0.3755, wh * 0.8731)
     ;     dc := PixelGetColor(ww * 0.3755, wh * 0.9259)
-    ;     ToolTip ("颜色不对，H" hc " RU" uc " RD" dc)
+    ;     ToolTip ("颜色不对，H " hc " RU " uc " RD " dc)
     ; }
 }
 ; 获取“收下”按钮位置
