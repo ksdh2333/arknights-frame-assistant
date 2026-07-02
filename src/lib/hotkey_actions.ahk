@@ -237,7 +237,7 @@ ActionBeginPause() {
             ;ToolTip("已严肃暂停")  ; 调试代码
             State.BlackScreenDetected := false
             State.ReadyForPause := false
-            SetTimer CheckGameStatus, 1000
+            SetTimer CheckGameStatus, 800
             break
         }
     }
