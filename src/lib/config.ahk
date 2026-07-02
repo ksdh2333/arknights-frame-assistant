@@ -70,7 +70,10 @@ class Constants {
     ; 自定义设置名称映射
     static CustomNames := Map(
         "ClickDelay", "点击延迟",
-        "SwitchHotkey", "启用/禁用热键"
+        "SwitchHotkey", "启用/禁用热键",
+        "FrameSkip16msDelay", "前进16ms延迟",
+        "FrameSkip33msDelay", "前进33ms延迟",
+        "FrameSkip166msDelay", "前进166ms延迟"
     )
 }
 
