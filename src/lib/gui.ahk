@@ -46,6 +46,7 @@ class GuiManager {
     static CurrentTab := ""    ; 当前显示的标签页
     static LastActiveTab := "keyBind"  ; 最后选中的功能性标签页（排除"其他设置"）
     static FrameSkipLabels := Map()     ; 过帧标签控件（用于动态更新文本）
+    static FrameSkipDelayKeys := ["FrameSkip16msDelay", "FrameSkip33msDelay", "FrameSkip166msDelay"]
     
     ; 初始化GUI（单例模式）
     static Init() {
@@ -636,14 +637,10 @@ class GuiManager {
         try {
             this._InitialValues["ClickDelay"] := this.MainGui["ClickDelay"].Value
         }
-        try {
-            this._InitialValues["FrameSkip16msDelay"] := this.MainGui["FrameSkip16msDelay"].Value
-        }
-        try {
-            this._InitialValues["FrameSkip33msDelay"] := this.MainGui["FrameSkip33msDelay"].Value
-        }
-        try {
-            this._InitialValues["FrameSkip166msDelay"] := this.MainGui["FrameSkip166msDelay"].Value
+        for key in this.FrameSkipDelayKeys {
+            try {
+                this._InitialValues[key] := this.MainGui[key].Value
+            }
         }
     }
 
@@ -676,17 +673,11 @@ class GuiManager {
                 if (this.MainGui["ClickDelay"].Value != this._InitialValues["ClickDelay"])
                     return
             }
-            try {
-                if (this.MainGui["FrameSkip16msDelay"].Value != this._InitialValues["FrameSkip16msDelay"])
-                    return
-            }
-            try {
-                if (this.MainGui["FrameSkip33msDelay"].Value != this._InitialValues["FrameSkip33msDelay"])
-                    return
-            }
-            try {
-                if (this.MainGui["FrameSkip166msDelay"].Value != this._InitialValues["FrameSkip166msDelay"])
-                    return
+            for key in this.FrameSkipDelayKeys {
+                try {
+                    if (this.MainGui[key].Value != this._InitialValues[key])
+                        return
+                }
             }
             ; 全部一致
             this.SetIsModifiedFalse()
