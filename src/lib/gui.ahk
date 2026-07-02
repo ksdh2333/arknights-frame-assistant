@@ -413,10 +413,17 @@ class GuiManager {
         this.CustomControls.Push(this.SwitchHotkey)
 
         ; 分类"关于"
+        ; 确保logo.png可用（编译时嵌入exe，运行时提取到AppData）
+        logoPath := A_AppData "\ArknightsFrameAssistant\PC\logo.png"
+        logoExpectedSize := 341766
+        needExtract := !FileExist(logoPath) || FileGetSize(logoPath) != logoExpectedSize
+        if (needExtract)
+            FileInstall "..\logo.png", logoPath, 1
+
         this.MainGui.Add("Text", "x160 y48 w0 h0 Section")
         logoSize := 256
         logoX := 160 + (530 - logoSize) / 2
-        aboutLogo := this.MainGui.Add("Picture", "x" logoX " y48 w" logoSize " h" logoSize, A_ScriptDir "\..\logo.png")
+        aboutLogo := this.MainGui.Add("Picture", "x" logoX " y48 w" logoSize " h" logoSize, logoPath)
         this.AboutControls.Push(aboutLogo)
 
         this.MainGui.SetFont("s12 bold", "Microsoft YaHei UI")
