@@ -28,6 +28,7 @@ class Constants {
         "PauseSelect", "暂停选中",
         "Skill", "单位技能",
         "Retreat", "单位撤退",
+        "16ms", "前进 16ms",
         "33ms", "前进 33ms",
         "166ms", "前进 166ms",
         "OneClickSkill", "一键技能",
@@ -78,7 +79,10 @@ class Constants {
     ; 自定义设置名称映射
     static CustomNames := Map(
         "ClickDelay", "点击延迟",
-        "SwitchHotkey", "启用/禁用热键"
+        "SwitchHotkey", "启用/禁用热键",
+        "FrameSkip16msDelay", "前进16ms延迟",
+        "FrameSkip33msDelay", "前进33ms延迟",
+        "FrameSkip166msDelay", "前进166ms延迟"
     )
 }
 
@@ -99,6 +103,7 @@ class Config {
         "PauseSelect", "w",
         "Skill", "s",
         "Retreat", "a",
+        "16ms", "",
         "33ms", "r",
         "166ms", "t",
         "OneClickSkill", "e",
@@ -150,7 +155,10 @@ class Config {
     ; 内部：默认自定义设置
     static _DefaultCustom := Map(
         "ClickDelay", "50",
-        "SwitchHotkey", ""
+        "SwitchHotkey", "",
+        "FrameSkip16msDelay", "16",
+        "FrameSkip33msDelay", "30",
+        "FrameSkip166msDelay", "165"
     )
     
     ; 配置文件路径
