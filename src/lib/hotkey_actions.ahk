@@ -248,7 +248,7 @@ ActionBeginPause() {
                 Send "{ESC Down}"
                 USleep(50)
                 Send "{ESC Up}"
-                ; ToolTip("是代理指挥，取消暂停")
+                ; ToolTip("是代理指挥，取消暂停")  ; 调试代码
             }
             State.BlackScreenDetected := false
             State.ReadyForPause := false
