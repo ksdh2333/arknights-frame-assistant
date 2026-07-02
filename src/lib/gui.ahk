@@ -38,6 +38,7 @@ class GuiManager {
     static LaunchControls := []        ; "启动与退出"设置控件组
     static UpdateControls := []        ; "更新"设置控件组
     static CustomControls := []        ; "自定义"设置控件组
+    static AboutControls := []         ; "关于"页面控件组
     static NotOtherControls := [] ; 仅非其他设置相关控件
     static TxtKeybind := ""           ; "常规作战"标签文本
     static TxtQuick := ""             ; "快捷操作"标签文本
@@ -294,6 +295,14 @@ class GuiManager {
         this.NavIndicators.Push(this.MainGui.Add("Text", "xp yp w3 hp Background1994d2 Hidden"))
         this.OtherSettingsControls.Push(this.NavIndicators[3])
 
+        ; 导航项"关于"（未选中态）
+        navAbout := this.MainGui.Add("Text", "xs y+m w130 Center", "关于")
+        navAbout.OnEvent("Click", (*) => this._SwitchOtherCategory("About"))
+        this.NavItems.Push(navAbout)
+        this.OtherSettingsControls.Push(navAbout)
+        this.NavIndicators.Push(this.MainGui.Add("Text", "xp yp w3 hp Background1994d2 Hidden"))
+        this.OtherSettingsControls.Push(this.NavIndicators[4])
+
         ; 其他设置 - 右侧内容区
         ; 分类"启动与退出"
         sepLaunch := this.MainGui.Add("Text", "x160 y48 w530 h1 Backgroundd0d0d0 Center Section")
@@ -403,11 +412,44 @@ class GuiManager {
         this.CustomControls.Push(txtSwitchHotkey)
         this.CustomControls.Push(this.SwitchHotkey)
 
+        ; 分类"关于"
+        aboutArea := this.MainGui.Add("Text", "x160 y48 w530 h1 Backgroundd0d0d0 Center Section")
+        this.AboutControls.Push(aboutArea)
+
+        aboutLogo := this.MainGui.Add("Picture", "xs y+20 w96 h96 Center Section", A_ScriptDir "\..\logo.png")
+        this.AboutControls.Push(aboutLogo)
+
+        this.MainGui.SetFont("s12 bold", "Microsoft YaHei UI")
+        aboutVersion := this.MainGui.Add("Text", "xs y+10 w530 Center", Version.Get())
+        this.MainGui.SetFont("s9 norm", "Microsoft YaHei UI")
+        this.AboutControls.Push(aboutVersion)
+
+        aboutRepo := this.MainGui.AddLink("xs y+15 w530 Center", '仓库：<a href="https://github.com/CloudTracey/arknights-frame-assistant">GitHub</a>')
+        this.AboutControls.Push(aboutRepo)
+
+        aboutFeedback := this.MainGui.AddLink("xs y+8 w530 Center", '反馈与建议：<a href="https://github.com/CloudTracey/arknights-frame-assistant/issues">GitHub Issues</a>')
+        this.AboutControls.Push(aboutFeedback)
+
+        this.MainGui.SetFont("s9 c0645AD underline", "Microsoft YaHei UI")
+        aboutChangelog := this.MainGui.Add("Text", "xs y+8 w530 Center", "更新公告")
+        aboutChangelog.OnEvent("Click", (*) => this._ShowChangelog())
+        this.MainGui.SetFont("s9 cDefault norm", "Microsoft YaHei UI")
+        this.AboutControls.Push(aboutChangelog)
+
+        aboutBilibili := this.MainGui.AddLink("xs y+8 w530 Center", '<a href="https://space.bilibili.com/3546557616899844">B站主页</a>')
+        this.AboutControls.Push(aboutBilibili)
+
+        aboutArtist := this.MainGui.AddLink("xs y+8 w530 Center", '<a href="https://x.com/fuse_daizu">图标画师主页</a>')
+        this.AboutControls.Push(aboutArtist)
+
         ; 隐藏非默认分类的控件
         for ctrl in this.UpdateControls {
             try ctrl.Visible := false
         }
         for ctrl in this.CustomControls {
+            try ctrl.Visible := false
+        }
+        for ctrl in this.AboutControls {
             try ctrl.Visible := false
         }
 
@@ -684,6 +726,11 @@ class GuiManager {
                 try ctrl.Visible := false
             }
         }
+        for ctrl in this.AboutControls {
+            if (IsObject(ctrl)) {
+                try ctrl.Visible := false
+            }
+        }
     }
 
     ; 内部：显示指定控件组
@@ -810,6 +857,9 @@ class GuiManager {
         for ctrl in this.CustomControls {
             try ctrl.Visible := false
         }
+        for ctrl in this.AboutControls {
+            try ctrl.Visible := false
+        }
 
         ; 显示目标分类控件
         switch categoryName {
@@ -828,6 +878,11 @@ class GuiManager {
                 try ctrl.Visible := true
             }
             targetIndex := 3
+        case "About":
+            for ctrl in this.AboutControls {
+                try ctrl.Visible := true
+            }
+            targetIndex := 4
         }
 
         ; 更新导航项样式
@@ -892,6 +947,21 @@ class GuiManager {
         ; 将修改状态改回未修改，并刷新快照
         this.SetIsModifiedFalse()
         this.CaptureInitialSnapshot()
+    }
+
+    static _ShowChangelog() {
+        configDir := A_AppData "\ArknightsFrameAssistant\PC"
+        changelogFile := configDir "\changelog.json"
+        if (!FileExist(changelogFile)) {
+            MessageBox.Info("暂无更新公告，请先连接网络检查更新。", "提示")
+            return
+        }
+        ChangelogChecker.ChangelogFile := changelogFile
+        body := ChangelogChecker._ReadAndBuildBody()
+        if (body != "")
+            ChangelogUI.Show(Version.Get(), body)
+        else
+            MessageBox.Info("暂无更新公告。", "提示")
     }
 }
 
