@@ -565,15 +565,19 @@ TakeOverButtonPositions() {
     PButtonRUY := wh * 0.8750
     ; 获取按钮下部 y 坐标
     PButtonRDY := wh * 0.9388
+    ; 设定“手”图标颜色
+    PButtonHColor := 0xe0e0e0
+    ; 设定按钮背景颜色
+    PButtonBColor := 0x323232
     return [
         ; "手"图标位置和颜色
-        {x: PButtonHX, y: PButtonHY, color: 0xe0e0e0}, 
+        {x: PButtonHX, y: PButtonHY, color: PButtonHColor}, 
         ; 按钮左侧位置和颜色
-        {x: PButtonLX, y: PButtonRUY, color: 0x323232}, {x: PButtonLX, y: PButtonRDY, color: 0x323232}, 
+        {x: PButtonLX, y: PButtonRUY, color: PButtonBColor}, {x: PButtonLX, y: PButtonRDY, color: PButtonBColor}, 
         ; 按钮中部位置和颜色
-        {x: PButtonMX, y: PButtonRUY, color: 0x323232}, {x: PButtonMX, y: PButtonRDY, color: 0x323232}, 
+        {x: PButtonMX, y: PButtonRUY, color: PButtonBColor}, {x: PButtonMX, y: PButtonRDY, color: PButtonBColor}, 
         ; 按钮右侧位置和颜色
-        {x: PButtonRX, y: PButtonRUY, color: 0x323232}, {x: PButtonRX, y: PButtonRDY, color: 0x323232}
+        {x: PButtonRX, y: PButtonRUY, color: PButtonBColor}, {x: PButtonRX, y: PButtonRDY, color: PButtonBColor}
     ]
 }
 ; 获取“收下”按钮位置
