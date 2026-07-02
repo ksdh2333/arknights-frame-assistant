@@ -54,7 +54,8 @@ class Constants {
     static ImportantNames := Map(
         "AutoExit", "自动退出",
         "AutoOpenSettings", "自动打开设置界面",
-        "Frame", "游戏内帧率设置",
+        "Frame", "游戏内帧率设置（兼容旧版）",
+        "Frame155", "游戏内帧率设置",
         "AutoUpdate", "自动检查更新",
         "LastDismissedVersion", "上次忽略的更新版本",
         "UpdateChannel", "更新渠道",
@@ -125,6 +126,7 @@ class Config {
         "AutoExit", "1",
         "AutoOpenSettings", "1",
         "Frame", "90",
+        "Frame155", "",
         "AutoUpdate", "1",
         "LastDismissedVersion", "",
         "UpdateChannel", "1",
@@ -191,9 +193,21 @@ class Config {
                 }
             }
         }
+        ; Frame键的特殊处理：始终从Frame155读取文本值，回退读Frame旧序号
+        if (key = "Frame") {
+            frame155 := IniRead(this.IniFile, "Main", "Frame155", "")
+            if (frame155 != "")
+                return frame155
+            frameIndex := this._ImportantSettings.Has(key) ? this._ImportantSettings[key] : ""
+            ; 旧版序号→文本值
+            static indexToText_ := Map("1","30", "2","60", "3","90", "4","120", "5","144", "6","165", "7","240+")
+            if indexToText_.Has(frameIndex)
+                return indexToText_[frameIndex]
+            return this._DefaultImportant["Frame"]
+        }
         return this._ImportantSettings.Has(key) ? this._ImportantSettings[key] : ""
     }
-    
+
     ; 设置重要设置
     static SetImportant(key, value) {
         this._ImportantSettings[key] := value
@@ -216,14 +230,25 @@ class Config {
         this._CustomSettings[key] := value
     }
     
-    ; 帧率设置数据迁移：从旧版序号格式转换为文本值格式
+    ; 帧率设置数据迁移：从旧版Frame序号迁移到Frame155文本值
     static MigrateFrameRate() {
         if this.IniFile = ""
             this.InitPath()
         if (!FileExist(this.IniFile))
             return
 
-        migrationMap := Map(
+        ; 如果Frame155已有值，无需迁移
+        frame155Value := IniRead(this.IniFile, "Main", "Frame155", "")
+        if (frame155Value != "")
+            return
+
+        ; 尝试从旧Frame读取并转换为文本值
+        frameValue := IniRead(this.IniFile, "Main", "Frame", "")
+        if (frameValue = "")
+            return
+
+        ; 旧版序号→文本值映射
+        static indexToText := Map(
             "1", "30",
             "2", "60",
             "3", "90",
@@ -233,12 +258,9 @@ class Config {
             "7", "240+"
         )
 
-        currentValue := IniRead(this.IniFile, "Main", "Frame", "")
-        if (currentValue = "")
-            return
-
-        if migrationMap.Has(currentValue) {
-            IniWrite(migrationMap[currentValue], this.IniFile, "Main", "Frame")
+        if indexToText.Has(frameValue) {
+            IniWrite(indexToText[frameValue], this.IniFile, "Main", "Frame155")
+            ; 保留原Frame值给旧版本使用
         }
     }
 
@@ -342,9 +364,20 @@ class Config {
             }
         }
         for keyVar, _ in Constants.ImportantNames {
+            if keyVar = "Frame155"
+                continue
             if this._ImportantSettings.Has(keyVar) {
                 IniWrite(this._ImportantSettings[keyVar], this.IniFile, "Main", keyVar)
             }
+        }
+
+        ; Frame双写兼容：Frame155存文本值，Frame存旧版索引
+        if this._ImportantSettings.Has("Frame") {
+            frameText := this._ImportantSettings["Frame"]
+            static frameTextToIndex := Map("30","1", "60","2", "90","3", "120","4", "144","5", "165","6", "180","6", "240+","7")
+            frameIndex := frameTextToIndex.Has(frameText) ? frameTextToIndex[frameText] : "3"
+            IniWrite(frameText, this.IniFile, "Main", "Frame155")
+            IniWrite(frameIndex, this.IniFile, "Main", "Frame")
         }
 
         ; 保存自定义设置
