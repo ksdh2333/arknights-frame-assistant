@@ -237,7 +237,7 @@ ActionBeginPause() {
             ; ToolTip("已严肃暂停")  ; 调试代码
             ; 为了降低暂停延迟，后置代理指挥识别，识别到是代理指挥时取消暂停
             isProxy := true
-            for point in TakeOverButtonPosition() {
+            for point in TakeOverButtonPositions() {
                 if !PixelSearch(&FoundX, &FoundY, point.x, point.y, point.x, point.y, point.color, 35) ; 接管按钮在开局会有较大透明度变化，容错 35
                 {
                     isProxy := false
@@ -551,7 +551,7 @@ HarvestButtonPosition() {
     return {PBX: PButtonX, PBY: PButtonY}
 }
 ; 获取代理接管作战按钮颜色识别位置（“手”图标、按钮右上角、按钮右下角）
-TakeOverButtonPosition() {
+TakeOverButtonPositions() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
     ; 获取“手”图标位置
     PButtonHX := ww * 0.28125, PButtonHY := wh * 0.9259
