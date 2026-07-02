@@ -231,8 +231,16 @@ ActionBeginPause() {
         ; ToolTip("正在识别按钮！")  ; 调试代码
         if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCY, PosC.PBCLX, PosC.PBCY, 0xd8d8d8, 10)
         {
-            if TakeOverButtonPosition() {
-                ToolTip("是代理作战")  ; 调试代码
+            isProxy := true
+            for point in TakeOverButtonPosition() {
+                if !PixelSearch(&FoundX, &FoundY, point.x, point.y, point.x, point.y, point.color, 35) ; 接管按钮在开局会有较大透明度变化，若出现误判问题可能需要添加更多检测点
+                {
+                    isProxy := false
+                    break
+                }
+            }
+            if isProxy {
+                ; ToolTip("是代理作战")  ; 调试代码
                 break
             }
             Send "{ESC Down}"
@@ -539,21 +547,25 @@ HarvestButtonPosition() {
     PButtonY := wh * 0.9527
     return {PBX: PButtonX, PBY: PButtonY}
 }
-; 代理接管作战按钮颜色识别（“手”图标、按钮右上角、按钮右下角）
+; 获取代理接管作战按钮颜色识别位置（“手”图标、按钮右上角、按钮右下角）
 TakeOverButtonPosition() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    if PixelSearch(&FoundX, &FoundY, ww * 0.28125, wh * 0.9259, ww * 0.28125, wh * 0.9259, 0xE0E0E0, 35) and 
-        PixelSearch(&FoundX, &FoundY, ww * 0.3755, wh * 0.8731,  ww * 0.3755, wh * 0.8731, 0x323232, 30) and 
-        PixelSearch(&FoundX, &FoundY, ww * 0.3755, wh * 0.9259,  ww * 0.3755, wh * 0.9259, 0x323232, 30) {
-            ; ToolTip ("检测到代理接管按钮")
-            return true
-    }
-    ; else {
-    ;     hc := PixelGetColor(ww * 0.28125, wh * 0.9259)
-    ;     uc := PixelGetColor(ww * 0.3755, wh * 0.8731)
-    ;     dc := PixelGetColor(ww * 0.3755, wh * 0.9259)
-    ;     ToolTip ("颜色不对，H " hc " RU " uc " RD " dc)
-    ; }
+    ; 获取“手”图标位置
+    PButtonHX := ww * 0.28125, PButtonHY := wh * 0.9259
+    ; 获取按钮右侧 x 坐标
+    PButtonRX := ww *0.3755
+    ; 获取按钮右上 y 坐标
+    PButtonRUY := wh * 0.8731
+    ; 获取按钮右下 y 坐标
+    PButtonRDY := wh * 0.9259
+    return [
+        ; "手"图标位置和颜色
+        {x: PButtonHX, y: PButtonHY, color: 0xe0e0e0},
+        ; 按钮右上部分位置和颜色
+        {x: PButtonRX, y: PButtonRUY, color: 0x323232},
+        ; 按钮右下部分位置和颜色
+        {x: PButtonRX, y: PButtonRDY, color: 0x323232}
+    ]
 }
 ; 获取“收下”按钮位置
 CollectButtonPosition() {
