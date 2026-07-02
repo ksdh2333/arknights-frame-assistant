@@ -228,13 +228,17 @@ ActionBeginPause() {
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     PosC := PauseButtonPositionColor()
     while(true) {
-        ;ToolTip("正在识别按钮！")  ; 调试代码
+        ; ToolTip("正在识别按钮！")  ; 调试代码
         if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCY, PosC.PBCLX, PosC.PBCY, 0xd8d8d8, 10)
         {
+            if TakeOverButtonPosition() {
+                ToolTip("是代理作战")  ; 调试代码
+                break
+            }
             Send "{ESC Down}"
             USleep(50)
             Send "{ESC Up}"
-            ;ToolTip("已严肃暂停")  ; 调试代码
+            ; ToolTip("已严肃暂停")  ; 调试代码
             State.BlackScreenDetected := false
             State.ReadyForPause := false
             SetTimer CheckGameStatus, 800
@@ -534,6 +538,31 @@ HarvestButtonPosition() {
     PButtonX := ww * 0.1297
     PButtonY := wh * 0.9527
     return {PBX: PButtonX, PBY: PButtonY}
+}
+; 代理接管作战按钮颜色识别（“手”图标、按钮右上角、按钮右下角）
+TakeOverButtonPosition() {
+    WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
+    if PixelSearch(&FoundX, &FoundY, ww * 0.28125, wh * 0.9259, ww * 0.28125, wh * 0.9259, 0xE0E0E0, 35) and 
+        PixelSearch(&FoundX, &FoundY, ww * 0.3755, wh * 0.8731,  ww * 0.3755, wh * 0.8731, 0x323232, 30) and 
+        PixelSearch(&FoundX, &FoundY, ww * 0.3755, wh * 0.9259,  ww * 0.3755, wh * 0.9259, 0x323232, 30) {
+            ; ToolTip ("检测到代理接管按钮")
+            return true
+    }
+    ; else if !PixelSearch(&FoundX, &FoundY, ww * 0.28125, wh * 0.9259, ww * 0.28125, wh * 0.9259, 0xc6c5c4, 20) {
+    ;     ToolTip ("手不对")
+    ; }
+    ; else if !PixelSearch(&FoundX, &FoundY, ww * 0.3755, wh * 0.8731,  ww * 0.3755, wh * 0.8731, 0x2e2e2e, 20) {
+    ;     ToolTip ("右上不对")
+    ; }
+    ; else if !PixelSearch(&FoundX, &FoundY, ww * 0.3755, wh * 0.9259,  ww * 0.3755, wh * 0.9259, 0x2e2e2e, 20) {
+    ;     ToolTip ("右下不对")
+    ; }
+    ; else {
+    ;     hc := PixelGetColor(ww * 0.28125, wh * 0.9259)
+    ;     uc := PixelGetColor(ww * 0.3755, wh * 0.8731)
+    ;     dc := PixelGetColor(ww * 0.3755, wh * 0.9259)
+    ;     ToolTip ("颜色不对，H" hc " RU" uc " RD" dc)
+    ; }
 }
 ; 获取“收下”按钮位置
 CollectButtonPosition() {
