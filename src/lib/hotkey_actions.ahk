@@ -226,7 +226,7 @@ ActionSwitchView(ThisHotkey) {
 ; 开局暂停
 ActionBeginPause() {
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
-    PosC := PauseButtonPositionColor()
+    PosC := SpeedButtonPositionColor()
     while(true) {
         ; ToolTip("正在识别按钮！")  ; 调试代码
         if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCY, PosC.PBCLX, PosC.PBCY, 0xffffff, 10)
@@ -521,7 +521,7 @@ PauseButtonPositionRight() {
     return {PBRX: PButtonRX, PBRY: PButtonRY}
 }
 ; 获取暂停按钮颜色识别位置
-PauseButtonPositionColor() {
+SpeedButtonPositionColor() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
     PButtonCLX := ww * 0.8450
     PButtonCRX := ww * 0.8588
