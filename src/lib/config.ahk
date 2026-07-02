@@ -12,6 +12,13 @@ class Constants {
     static Delay180 := 6      ; 180帧
     static Delay240 := 5      ; 240帧
 
+    ; 帧率选项（下拉框显示文本→下拉框索引，1-based）
+    static FrameOptions := ["30", "60", "90", "120", "144", "165", "180", "240+"]
+    ; 帧率文本→旧版序号（用于Frame双写兼容）
+    static FrameTextToOldIndex := Map("30","1", "60","2", "90","3", "120","4", "144","5", "165","6", "180","6", "240+","7")
+    ; 旧版序号→帧率文本（用于迁移和回退）
+    static FrameOldIndexToText := Map("1","30", "2","60", "3","90", "4","120", "5","144", "6","165", "7","240+")
+
     ; 按键名称映射
     static KeyNames := Map(
         ; 常规作战
@@ -193,16 +200,16 @@ class Config {
                 }
             }
         }
-        ; Frame键的特殊处理：始终从Frame155读取文本值，回退读Frame旧序号
+        ; Frame键的特殊处理：优先内存中Frame155（未持久化的值），回退INI，再回退旧序号
         if (key = "Frame") {
-            frame155 := IniRead(this.IniFile, "Main", "Frame155", "")
+            frame155 := this._ImportantSettings.Has("Frame155") && this._ImportantSettings["Frame155"] != ""
+                ? this._ImportantSettings["Frame155"]
+                : IniRead(this.IniFile, "Main", "Frame155", "")
             if (frame155 != "")
                 return frame155
             frameIndex := this._ImportantSettings.Has(key) ? this._ImportantSettings[key] : ""
-            ; 旧版序号→文本值
-            static indexToText_ := Map("1","30", "2","60", "3","90", "4","120", "5","144", "6","165", "7","240+")
-            if indexToText_.Has(frameIndex)
-                return indexToText_[frameIndex]
+            if Constants.FrameOldIndexToText.Has(frameIndex)
+                return Constants.FrameOldIndexToText[frameIndex]
             return this._DefaultImportant["Frame"]
         }
         return this._ImportantSettings.Has(key) ? this._ImportantSettings[key] : ""
@@ -247,19 +254,8 @@ class Config {
         if (frameValue = "")
             return
 
-        ; 旧版序号→文本值映射
-        static indexToText := Map(
-            "1", "30",
-            "2", "60",
-            "3", "90",
-            "4", "120",
-            "5", "144",
-            "6", "165",
-            "7", "240+"
-        )
-
-        if indexToText.Has(frameValue) {
-            IniWrite(indexToText[frameValue], this.IniFile, "Main", "Frame155")
+        if Constants.FrameOldIndexToText.Has(frameValue) {
+            IniWrite(Constants.FrameOldIndexToText[frameValue], this.IniFile, "Main", "Frame155")
             ; 保留原Frame值给旧版本使用
         }
     }
@@ -374,8 +370,7 @@ class Config {
         ; Frame双写兼容：Frame155存文本值，Frame存旧版索引
         if this._ImportantSettings.Has("Frame") {
             frameText := this._ImportantSettings["Frame"]
-            static frameTextToIndex := Map("30","1", "60","2", "90","3", "120","4", "144","5", "165","6", "180","6", "240+","7")
-            frameIndex := frameTextToIndex.Has(frameText) ? frameTextToIndex[frameText] : "3"
+            frameIndex := Constants.FrameTextToOldIndex.Has(frameText) ? Constants.FrameTextToOldIndex[frameText] : "3"
             IniWrite(frameText, this.IniFile, "Main", "Frame155")
             IniWrite(frameIndex, this.IniFile, "Main", "Frame")
         }

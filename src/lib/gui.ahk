@@ -166,18 +166,10 @@ class GuiManager {
 
         ; 游戏内帧率设置
         txtFrame := this.MainGui.Add("Text", "x45 y+20 w90 Right", "游戏内帧率")
-        this.GuiFrame := this.MainGui.Add("DropDownList", "x+20 y+-18 w120 vFrame", ["30", "60", "90", "120", "144", "165", "180", "240+"])
+        this.GuiFrame := this.MainGui.Add("DropDownList", "x+20 y+-18 w120 vFrame", Constants.FrameOptions)
         this.GuiFrame.OnEvent("Change", (*) => this.TrackChange("Frame"))
         frameText := Config.GetImportant("Frame")
-        frameIndex := 3  ; 默认"90"
-        frameOptions := ["30", "60", "90", "120", "144", "165", "180", "240+"]
-        for i, opt in frameOptions {
-            if (opt = frameText) {
-                frameIndex := i
-                break
-            }
-        }
-        this.MainGui["Frame"].Value := frameIndex
+        this.MainGui["Frame"].Value := this._FrameTextToIndex(frameText)
         this.NotOtherControls.Push(txtFrame)
         this.NotOtherControls.Push(this.GuiFrame)
 
@@ -461,17 +453,7 @@ class GuiManager {
         for key, value in Config.AllImportant {
             try {
                 if (key = "Frame") {
-                    ; Frame需要将文本值转为新下拉框索引
-                    frameText := Config.GetImportant("Frame")
-                    frameIndex := 3
-                    frameOptions := ["30", "60", "90", "120", "144", "165", "180", "240+"]
-                    for i, opt in frameOptions {
-                        if (opt = frameText) {
-                            frameIndex := i
-                            break
-                        }
-                    }
-                    this.MainGui[key].Value := frameIndex
+                    this.MainGui[key].Value := this._FrameTextToIndex(Config.GetImportant("Frame"))
                 } else {
                     this.MainGui[key].Value := value
                 }
@@ -707,6 +689,15 @@ class GuiManager {
                 try ctrl.Visible := false
             }
         }
+    }
+
+    ; 帧率文本值→下拉框索引
+    static _FrameTextToIndex(frameText) {
+        for i, opt in Constants.FrameOptions {
+            if (opt = frameText)
+                return i
+        }
+        return 3  ; 默认"90"
     }
 
     ; 内部：显示指定控件组
