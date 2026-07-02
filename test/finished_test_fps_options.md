@@ -101,6 +101,27 @@
 - [x] 验证：修改帧率后点击"保存并关闭"，重启后帧率正确
 - [x] 验证：修改帧率后点击"取消"，重启后帧率恢复修改前的值
 
+## 追加测试（重构：集中帧率映射 + GetImportant内存优先）
+
+> 对应更改：Constants 新增 FrameOptions/FrameTextToOldIndex/FrameOldIndexToText，GuiManager 新增 _FrameTextToIndex，GetImportant("Frame") 优先检查内存中 Frame155
+
+### 回归：GetImportant 内存优先
+
+- [ ] **操作**：启动 AFA，修改帧率为 180，仅点"应用设置"（不保存），检查下拉框显示值
+- [ ] **预期**：下拉框保持"180"（`_ImportantSettings["Frame155"]` 已被 SetImportant 写入但未持久化到 INI，GetImportant 内存优先正确返回）
+
+- [ ] **操作**：在上述状态下关闭 AFA，重启，检查帧率
+- [ ] **预期**：恢复为 180（已通过"应用设置"持久化到 INI）
+
+### 回归：集中映射重构 — 各路径一致性
+
+- [ ] 验证：下拉框选项 = `Constants.FrameOptions`，与之前 8 项一致
+- [ ] 验证：选择各帧率保存后 INI 中 Frame155 和 Frame 的值与之前一致（使用 `Constants.FrameTextToOldIndex`）
+- [ ] 验证：旧序号迁移仍正确（使用 `Constants.FrameOldIndexToText`）
+- [ ] 验证："应用设置"后 `_UpdateImportantControlsFromConfig` 中的帧率转换正确（使用 `_FrameTextToIndex`）
+
+---
+
 ### 功能：其他设置不受影响
 
 - [x] 验证：自动退出、自动打开设置、默认卫戍协议等设置读写正常
