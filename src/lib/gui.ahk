@@ -168,7 +168,16 @@ class GuiManager {
         txtFrame := this.MainGui.Add("Text", "x45 y+20 w90 Right", "游戏内帧率")
         this.GuiFrame := this.MainGui.Add("DropDownList", "x+20 y+-18 w120 vFrame", ["30", "60", "90", "120", "144", "165", "180", "240+"])
         this.GuiFrame.OnEvent("Change", (*) => this.TrackChange("Frame"))
-        this.MainGui["Frame"].Value := Config.GetImportant("Frame")
+        frameText := Config.GetImportant("Frame")
+        frameIndex := 3  ; 默认"90"
+        frameOptions := ["30", "60", "90", "120", "144", "165", "180", "240+"]
+        for i, opt in frameOptions {
+            if (opt = frameText) {
+                frameIndex := i
+                break
+            }
+        }
+        this.MainGui["Frame"].Value := frameIndex
         this.NotOtherControls.Push(txtFrame)
         this.NotOtherControls.Push(this.GuiFrame)
 
