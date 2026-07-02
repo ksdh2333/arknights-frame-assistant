@@ -45,6 +45,7 @@ class GuiManager {
     static TxtOther := ""             ; "其他设置"标签文本
     static CurrentTab := ""    ; 当前显示的标签页
     static LastActiveTab := "keyBind"  ; 最后选中的功能性标签页（排除"其他设置"）
+    static FrameSkipLabels := Map()     ; 过帧标签控件（用于动态更新文本）
     
     ; 初始化GUI（单例模式）
     static Init() {
@@ -135,18 +136,25 @@ class GuiManager {
         this.KeybindControls.Push(AddBindRow("暂停时选中", "PauseSelect")*)
         this.KeybindControls.Push(AddBindRow("单位技能", "Skill")*)
         this.KeybindControls.Push(AddBindRow("单位撤退", "Retreat")*)
+        this.KeybindControls.Push(AddBindRow("视角切换", "SwitchView")*)
         
         ; 常规作战 - 右列
         this.MainGui.Add("GroupBox", "x" this.ColWidth " ys w" this.ColWidth  " h0 Section vKeybindRightGroup", "")
         this.KeybindControls.Push(this.MainGui["KeybindRightGroup"])
         
-        this.KeybindControls.Push(AddBindRow("前进 33ms", "33ms")*)
-        this.KeybindControls.Push(AddBindRow("前进 166ms", "166ms")*)
+        row16ms := AddBindRow("前进 16ms", "16ms")
+        this.KeybindControls.Push(row16ms*)
+        this.FrameSkipLabels["16ms"] := row16ms[1]
+        row33ms := AddBindRow("前进 33ms", "33ms")
+        this.KeybindControls.Push(row33ms*)
+        this.FrameSkipLabels["33ms"] := row33ms[1]
+        row166ms := AddBindRow("前进 166ms", "166ms")
+        this.KeybindControls.Push(row166ms*)
+        this.FrameSkipLabels["166ms"] := row166ms[1]
         this.KeybindControls.Push(AddBindRow("一键技能", "OneClickSkill")*)
         this.KeybindControls.Push(AddBindRow("一键撤退", "OneClickRetreat")*)
         this.KeybindControls.Push(AddBindRow("暂停技能", "PauseSkill")*)
         this.KeybindControls.Push(AddBindRow("暂停撤退", "PauseRetreat")*)
-        this.KeybindControls.Push(AddBindRow("视角切换", "SwitchView")*)
         ; 空白占位
         placeholderKeybind := this.MainGui.Add("Text", "xs+45 y+-10 w90 h0 Right +0x200")
         this.KeybindControls.Push(placeholderKeybind)
@@ -403,6 +411,27 @@ class GuiManager {
         this.CustomControls.Push(txtSwitchHotkey)
         this.CustomControls.Push(this.SwitchHotkey)
 
+        ; 过帧档位1延迟
+        txtFrameSkip1 := this.MainGui.Add("Text", "xs y+16 Section", "过帧档位1")
+        editFrameSkip1 := this.MainGui.Add("Edit", "x+15 yp-2 w120 h21 vFrameSkip16msDelay Number", Config.GetCustom("FrameSkip16msDelay"))
+        editFrameSkip1.OnEvent("Change", (*) => this.TrackChange("FrameSkip16msDelay"))
+        this.CustomControls.Push(txtFrameSkip1)
+        this.CustomControls.Push(editFrameSkip1)
+
+        ; 过帧档位2延迟
+        txtFrameSkip2 := this.MainGui.Add("Text", "xs y+10", "过帧档位2")
+        editFrameSkip2 := this.MainGui.Add("Edit", "x+15 yp-2 w120 h21 vFrameSkip33msDelay Number", Config.GetCustom("FrameSkip33msDelay"))
+        editFrameSkip2.OnEvent("Change", (*) => this.TrackChange("FrameSkip33msDelay"))
+        this.CustomControls.Push(txtFrameSkip2)
+        this.CustomControls.Push(editFrameSkip2)
+
+        ; 过帧档位3延迟
+        txtFrameSkip3 := this.MainGui.Add("Text", "xs y+10", "过帧档位3")
+        editFrameSkip3 := this.MainGui.Add("Edit", "x+15 yp-2 w120 h21 vFrameSkip166msDelay Number", Config.GetCustom("FrameSkip166msDelay"))
+        editFrameSkip3.OnEvent("Change", (*) => this.TrackChange("FrameSkip166msDelay"))
+        this.CustomControls.Push(txtFrameSkip3)
+        this.CustomControls.Push(editFrameSkip3)
+
         ; 隐藏非默认分类的控件
         for ctrl in this.UpdateControls {
             try ctrl.Visible := false
@@ -445,6 +474,13 @@ class GuiManager {
                 this.MainGui[key].Value := value
             }
         }
+        this._UpdateFrameSkipLabels()
+    }
+
+    static _UpdateFrameSkipLabels() {
+        try this.FrameSkipLabels["16ms"].Text := "前进 " Config.GetCustom("FrameSkip16msDelay") "ms"
+        try this.FrameSkipLabels["33ms"].Text := "前进 " Config.GetCustom("FrameSkip33msDelay") "ms"
+        try this.FrameSkipLabels["166ms"].Text := "前进 " Config.GetCustom("FrameSkip166msDelay") "ms"
     }
 
     ; 内部：更新其他控件值（从配置）
@@ -600,6 +636,15 @@ class GuiManager {
         try {
             this._InitialValues["ClickDelay"] := this.MainGui["ClickDelay"].Value
         }
+        try {
+            this._InitialValues["FrameSkip16msDelay"] := this.MainGui["FrameSkip16msDelay"].Value
+        }
+        try {
+            this._InitialValues["FrameSkip33msDelay"] := this.MainGui["FrameSkip33msDelay"].Value
+        }
+        try {
+            this._InitialValues["FrameSkip166msDelay"] := this.MainGui["FrameSkip166msDelay"].Value
+        }
     }
 
     ; 跟踪控件变更——与初始快照对比，决定按钮启用/禁用
@@ -629,6 +674,18 @@ class GuiManager {
             }
             try {
                 if (this.MainGui["ClickDelay"].Value != this._InitialValues["ClickDelay"])
+                    return
+            }
+            try {
+                if (this.MainGui["FrameSkip16msDelay"].Value != this._InitialValues["FrameSkip16msDelay"])
+                    return
+            }
+            try {
+                if (this.MainGui["FrameSkip33msDelay"].Value != this._InitialValues["FrameSkip33msDelay"])
+                    return
+            }
+            try {
+                if (this.MainGui["FrameSkip166msDelay"].Value != this._InitialValues["FrameSkip166msDelay"])
                     return
             }
             ; 全部一致
