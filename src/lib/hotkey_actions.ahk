@@ -237,21 +237,29 @@ ActionBeginPause() {
             ToolTip("已严肃暂停")  ; 调试代码
             ; 为了降低暂停延迟，后置代理指挥识别，识别到是代理指挥时取消暂停
             isProxy := true
+            pointInfo := [] ; 调试代码
             for point in TakeOverButtonPositions() {
                 if !PixelSearch(&FoundX, &FoundY, point.x, point.y, point.x, point.y, point.color, 35) ; 接管按钮在开局会有较大透明度变化，容错 35
                 {
                     isProxy := false
-                    break
+                    ; break
                 }
+                color := PixelGetColor(point.x, point.y)
+                pointInfo.Push(Format("({:.0f},{:.0f})={:#x}", point.x, point.y, color)) ; 调试代码
             }
             if isProxy {
                 Send "{ESC Down}"
                 USleep(50)
                 Send "{ESC Up}"
-                ToolTip("是代理指挥，取消暂停")  ; 调试代码
+                ; ToolTip("是代理指挥，取消暂停")  ; 调试代码
             } else {
-                ToolTip("没有找到代理指挥")  ; 调试代码
+                ; ToolTip("没有找到代理指挥")  ; 调试代码
             }
+            infoStr := ""
+            for info in pointInfo
+                infoStr .= (infoStr ? ", " : "") . info
+            ToolTip("坐标颜色: " . infoStr)  ; 调试代码，检测到是代理指挥时依次输出所有检测成功的坐标和颜色
+
             State.BlackScreenDetected := false
             State.ReadyForPause := false
             SetTimer CheckGameStatus, 800
