@@ -237,7 +237,7 @@ ActionBeginPause() {
             ; ToolTip("已严肃暂停")  ; 调试代码
             ; 为了降低暂停延迟，后置代理指挥识别，识别到是代理指挥时取消暂停
             TobC := TakeOverButtonPositions()
-            if ImageSearch(&OutputVarX, &OutputVarY, TobC.LX, Tobc.UY, TobC.RX, TobC.DY, "*45 resources\images\TakeOverButton_1.png") or ImageSearch(&OutputVarX, &OutputVarY, TobC.LX, Tobc.UY, TobC.RX, TobC.DY, "*45 resources\images\TakeOverButton_2.png") { ; 0 帧暂停接管按钮半透明导致至少需要 45 容错
+            if ImageSearch(&OutputVarX, &OutputVarY, TobC.LX, Tobc.UY, TobC.RX, TobC.DY, "*90 resources\images\TakeOverButton_1.png") or ImageSearch(&OutputVarX, &OutputVarY, TobC.LX, Tobc.UY, TobC.RX, TobC.DY, "*90 resources\images\TakeOverButton_2.png") { ; 0 帧暂停接管按钮半透明导致至少需要 45 容错
                 Send "{ESC Down}"
                 USleep(50)
                 Send "{ESC Up}"
