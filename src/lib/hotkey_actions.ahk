@@ -252,7 +252,7 @@ ActionBeginPause() {
     PosC := SpeedButtonPositionColor()
     while(true) {
         ; ToolTip("正在识别按钮！")  ; 调试代码
-        if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCY, PosC.PBCLX, PosC.PBCY, 0xffffff, 10)
+        if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCUY, PosC.PBCLX, PosC.PBCDY, 0xffffff, 10)
         {
             Send "{ESC Down}"
             USleep(50)
@@ -558,9 +558,10 @@ PauseButtonPositionRight() {
 SpeedButtonPositionColor() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
     PButtonCLX := ww * 0.8450
-    PButtonCRX := ww * 0.8588
-    PButtonCY := wh * 0.0870
-    return {PBCLX: PButtonCLX, PBCRX: PButtonCRX, PBCY: PButtonCY}
+    PButtonCRX := ww * 0.8807
+    PButtonCUY := wh * 0.0713
+    PButtonCDY := wh * 0.0870
+    return {PBCLX: PButtonCLX, PBCRX: PButtonCRX, PBCUY: PButtonCUY, PBCDY: PButtonCDY}
 }
 ; 获取基建收取按钮位置
 HarvestButtonPosition() {
