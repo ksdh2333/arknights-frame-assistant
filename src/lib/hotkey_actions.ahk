@@ -262,7 +262,7 @@ ActionBeginPause() {
             isProxy := true
             ; pointInfo := [] ; 调试代码
             for point in TakeOverButtonPositions() {
-                if !PixelSearch(&FoundX, &FoundY, point.LX, point.Y, point.RX, point.Y, point.C, 8)
+                if !PixelSearch(&FoundX, &FoundY, point.LX, point.Y, point.RX, point.Y, point.C, 20)
                 {
                     isProxy := false
                     ; ToolTip("此识别不对：" . point.LX . " " . point.Y . "→" . point.RX . " " . point.Y . " " . Format("{1:X}", point.C) . " " . "实际识别到的：" . PixelGetColor(point.LX, point.Y))
@@ -588,13 +588,23 @@ HarvestButtonPosition() {
 TakeOverButtonPositions() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
     ; 获取 x1 坐标
-    X1 := ww * 0.336914
+    X1 := ww * 0.332031
     ; 获取 x2 坐标
-    X2 := ww * 0.347167
+    X2 := ww * 0.336914
     ; 获取 x3 坐标
-    X3 := ww * 0.357421
+    X3 := ww * 0.342285
     ; 获取 x4 坐标
-    X4 := ww * 0.367675
+    X4 := ww * 0.347167
+    ; 获取 x5 坐标
+    X5 := ww * 0.352539
+    ; 获取 x6 坐标
+    X6 := ww * 0.357421
+    ; 获取 x7 坐标
+    X7 := ww * 0.362792
+    ; 获取 x8 坐标
+    X8 := ww * 0.367675
+    ; 获取 x9 坐标
+    X9 := ww * 0.373046
     
     ; 获取上方 y 坐标
     UY := wh * 0.887962
@@ -606,13 +616,14 @@ TakeOverButtonPositions() {
     ; 设定中线识别颜色
     MColor := 0x333333
     ; 设定按钮背景颜色
-    BColor := 0x322C2C
+    BColor := 0x323232
     return [
         ; 线识别坐标
-        {LX : X1, RX : X4, Y: MY, C: MColor}, 
+        {LX : X2, RX : X8, Y: MY, C: MColor}, 
         ; 点识别坐标
-        ; {LX : X1, RX : X1, Y: UY, C: BC}, {LX : X2, RX : X2, Y: UY, C: BC}, {LX : X3, RX : X3, Y: UY, C: BC}, {LX : X4, RX : X4, Y: UY, C: BC}, 
-        {LX : X1, RX : X1, Y: DY, C: BColor}, {LX : X2, RX : X2, Y: DY, C: BColor}, {LX : X3, RX : X3, Y: DY, C: BColor}, {LX : X4, RX : X4, Y: DY, C: BColor}
+        {LX : X1, RX : X1, Y: DY, C: BColor}, {LX : X2, RX : X2, Y: DY, C: BColor}, {LX : X3, RX : X3, Y: DY, C: BColor}, {LX : X4, RX : X4, Y: DY, C: BColor},
+        {LX : X5, RX : X5, Y: DY, C: BColor}, {LX : X6, RX : X6, Y: DY, C: BColor}, {LX : X7, RX : X7, Y: DY, C: BColor}, {LX : X8, RX : X8, Y: DY, C: BColor},
+        {LX : X9, RX : X9, Y: DY, C: BColor}
     ]
 }
 ; 获取“收下”按钮位置
