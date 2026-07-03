@@ -265,7 +265,7 @@ WM_LBUTTONDOWN(wParam, lParam, msg, hwnd) {
                 return
         }
         ; 排除非按键绑定输入框
-        if (KeyBinder.ControlObj.Name == "GitHubToken" || KeyBinder.ControlObj.Name == "GamePath" || KeyBinder.ControlObj.Name == "ClickDelay" || KeyBinder.ControlObj.Name == "GameUIScale") {
+        if (KeyBinder.ControlObj.Name == "GitHubToken" || KeyBinder.ControlObj.Name == "GamePath" || KeyBinder.ControlObj.Name == "ClickDelay") {
             return
         }
         ; 若为首次点击Edit控件

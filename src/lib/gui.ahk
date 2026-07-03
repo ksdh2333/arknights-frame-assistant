@@ -172,13 +172,6 @@ class GuiManager {
         this.NotOtherControls.Push(txtFrame)
         this.NotOtherControls.Push(this.GuiFrame)
 
-        ; 游戏 UI 缩放设置
-        txtUIScale := this.MainGui.Add("Text", "x+15 yp+0 w110 Right", "游戏 UI 缩放设置")
-        editUIScale := this.MainGui.Add("Edit", "x+10 yp-2 w60 Number vGameUIScale", Config.GetImportant("GameUIScale"))
-        editUIScale.OnEvent("Change", (*) => this.TrackChange("GameUIScale"))
-        this.NotOtherControls.Push(txtUIScale)
-        this.NotOtherControls.Push(editUIScale)
-
         ; 自动暂停开关
         checkboxAutoBeginPause := this.MainGui.Add("Checkbox", "x+30 yp+2 vAutoBeginPause", " 开局自动暂停")
         checkboxAutoBeginPause.OnEvent("Click", (*) => this.TrackChange("AutoBeginPause"))
@@ -595,7 +588,7 @@ class GuiManager {
             }
         }
         ; Important 设置
-        for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken", "GameUIScale", "AutoBeginPause"] {
+        for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
             try {
                 this._InitialValues[key] := this.MainGui[key].Value
             }
@@ -624,7 +617,7 @@ class GuiManager {
                         return
                 }
             }
-            for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken", "GameUIScale", "AutoBeginPause"] {
+            for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
                 try {
                     if (this.MainGui[key].Value != this._InitialValues[key])
                         return

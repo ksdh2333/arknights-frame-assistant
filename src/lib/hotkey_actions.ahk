@@ -548,10 +548,9 @@ PauseButtonPositionRight() {
 ; 获取暂停按钮颜色识别位置
 PauseButtonPositionColor() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    PButtonCLX := ScaleByGameUIScale(ww * 0.9375, ww * 0.94635)
-    PButtonCRX := ScaleByGameUIScale(ww * 0.9526, ww * 0.95885)
-    PButtonCY := ScaleByGameUIScale(wh * 0.0564, wh * 0.0495)
-    ; MouseMove PButtonCRX, PButtonCY
+    PButtonCLX := ww * 0.9375
+    PButtonCRX := ww * 0.9473
+    PButtonCY := wh * 0.0600
     return {PBCLX: PButtonCLX, PBCRX: PButtonCRX, PBCY: PButtonCY}
 }
 ; 获取基建收取按钮位置
@@ -565,20 +564,17 @@ HarvestButtonPosition() {
 TakeOverButtonPositions() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
     ; 获取“手”图标位置
-    ; PButtonHX := ww * 0.28125, PButtonHY := wh * 0.9259
-    PButtonHX := ScaleByGameUIScale(ww * 0.28125, ww * 0.30625), PButtonHY := ScaleByGameUIScale(wh * 0.9259, wh * 0.9351)
+    PButtonHX := ww * 0.28125, PButtonHY := wh * 0.9259
     ; 获取按钮左侧 x 坐标
-    ; PButtonLX := ww * 0.2625
-    PButtonLX := ScaleByGameUIScale(ww * 0.2625, ww * 0.2849)
+    PButtonLX := ww * 0.2625
     ; 获取按钮中部 x 坐标
-    ; PButtonMX := ww * 0.3375
-    PButtonMX := ScaleByGameUIScale(ww * 0.3375, ww * 0.35)
+    PButtonMX := ww * 0.3375
     ; 获取按钮右侧 x 坐标
-    PButtonRX := ScaleByGameUIScale(ww * 0.3755, ww * 0.389)
+    PButtonRX := ww *0.3755
     ; 获取按钮上部 y 坐标
-    PButtonRUY := ScaleByGameUIScale(wh * 0.8750, wh * 0.888)
+    PButtonRUY := wh * 0.8750
     ; 获取按钮下部 y 坐标
-    PButtonRDY := ScaleByGameUIScale(wh * 0.9388, wh * 0.9444)
+    PButtonRDY := wh * 0.9388
     ; 设定“手”图标颜色
     PButtonHColor := 0xe0e0e0
     ; 设定按钮背景颜色
@@ -593,13 +589,6 @@ TakeOverButtonPositions() {
         ; 按钮右侧位置和颜色
         {x: PButtonRX, y: PButtonRUY, color: PButtonBColor}, {x: PButtonRX, y: PButtonRDY, color: PButtonBColor}
     ]
-}
-; UI 缩放设置转换
-ScaleByGameUIScale(x100,x90) {
-    GameUIScale := Config.GetImportant("GameUIScale")
-    n := (GameUIScale - 90) / 10
-    xs := x90 - (x90 - x100) * n
-    return xs
 }
 ; 获取“收下”按钮位置
 CollectButtonPosition() {
