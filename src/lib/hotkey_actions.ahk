@@ -239,7 +239,7 @@ ActionBeginPause() {
             isProxy := true
             ; pointInfo := [] ; 调试代码
             for point in TakeOverButtonPositions() {
-                if !PixelSearch(&FoundX, &FoundY, point.LX, point.Y, point.RX, point.Y, point.C, 20)
+                if !PixelSearch(&FoundX, &FoundY, point.LX, point.Y, point.RX, point.Y, point.C, 8)
                 {
                     isProxy := false
                     ; ToolTip("此识别不对：" . point.LX . " " . point.Y . "→" . point.RX . " " . point.Y . " " . Format("{1:X}", point.C) . " " . "实际识别到的：" . PixelGetColor(point.LX, point.Y))
