@@ -554,7 +554,7 @@ PauseButtonPositionRight() {
     PButtonRY := wh * 0.0700
     return {PBRX: PButtonRX, PBRY: PButtonRY}
 }
-; 获取暂停按钮颜色识别位置
+; 获取自动暂停倍速按钮识别位置
 SpeedButtonPositionColor() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
     PButtonCLX := ww * 0.8450
