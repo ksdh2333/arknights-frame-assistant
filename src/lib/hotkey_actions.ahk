@@ -236,30 +236,15 @@ ActionBeginPause() {
             Send "{ESC Up}"
             ; ToolTip("已严肃暂停")  ; 调试代码
             ; 为了降低暂停延迟，后置代理指挥识别，识别到是代理指挥时取消暂停
-            isProxy := true
-            ; pointInfo := [] ; 调试代码
-            for point in TakeOverButtonPositions() {
-                if !PixelSearch(&FoundX, &FoundY, point.LX, point.Y, point.RX, point.Y, point.C, 8)
-                {
-                    isProxy := false
-                    ; ToolTip("此识别不对：" . point.LX . " " . point.Y . "→" . point.RX . " " . point.Y . " " . Format("{1:X}", point.C) . " " . "实际识别到的：" . PixelGetColor(point.LX, point.Y))
-                    break
-                }
-                ; color := PixelGetColor(point.x, point.y)
-                ; pointInfo.Push(Format("({:.0f},{:.0f})={:#x}", point.x, point.y, color)) ; 调试代码
-            }
-            if isProxy {
+            TobC := TakeOverButtonPositions()
+            if ImageSearch(&OutputVarX, &OutputVarY, TobC.LX, Tobc.UY, TobC.RX, TobC.DY, "*45 resources\images\TakeOverButton_1.png") or ImageSearch(&OutputVarX, &OutputVarY, TobC.LX, Tobc.UY, TobC.RX, TobC.DY, "*45 resources\images\TakeOverButton_2.png") { ; 0 帧暂停接管按钮半透明导致至少需要 45 容错
                 Send "{ESC Down}"
                 USleep(50)
                 Send "{ESC Up}"
-                ; ToolTip("是代理指挥，取消暂停")  ; 调试代码
+                ToolTip("是代理指挥，取消暂停")  ; 调试代码
             } else {
-                ; ToolTip("没有找到代理指挥")  ; 调试代码
+                ToolTip("没有找到代理指挥")  ; 调试代码
             }
-            ;;infoStr := ""
-            ; for info in pointInfo
-            ;     infoStr .= (infoStr ? ", " : "") . info
-            ; ToolTip("坐标颜色: " . infoStr)  ; 调试代码，检测到是代理指挥时依次输出所有检测成功的坐标和颜色
 
             State.BlackScreenDetected := false
             State.ReadyForPause := false
@@ -564,33 +549,9 @@ HarvestButtonPosition() {
 ; 获取代理接管作战按钮颜色识别位置
 TakeOverButtonPositions() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    ; 获取 x1 坐标
-    X1 := ww * 0.336914
-    ; 获取 x2 坐标
-    X2 := ww * 0.347167
-    ; 获取 x3 坐标
-    X3 := ww * 0.357421
-    ; 获取 x4 坐标
-    X4 := ww * 0.367675
-    
-    ; 获取上方 y 坐标
-    UY := wh * 0.887962
-    ; 获取中线 y 坐标
-    MY := wh * 0.914814
-    ; 获取下方 y 坐标
-    DY := wh * 0.939814
-
-    ; 设定中线识别颜色
-    MColor := 0x333333
-    ; 设定按钮背景颜色
-    BColor := 0x322C2C
-    return [
-        ; 线识别坐标
-        {LX : X1, RX : X4, Y: MY, C: MColor}, 
-        ; 点识别坐标
-        ; {LX : X1, RX : X1, Y: UY, C: BC}, {LX : X2, RX : X2, Y: UY, C: BC}, {LX : X3, RX : X3, Y: UY, C: BC}, {LX : X4, RX : X4, Y: UY, C: BC}, 
-        {LX : X1, RX : X1, Y: DY, C: BColor}, {LX : X2, RX : X2, Y: DY, C: BColor}, {LX : X3, RX : X3, Y: DY, C: BColor}, {LX : X4, RX : X4, Y: DY, C: BColor}
-    ]
+    PButtonLX := ww * 0.3651, PButtonRX := ww * 0.4073
+    PButtonUY := wh * 0.8685, PButtonDY := wh * 0.9546
+    return {LX : PButtonLX, RX : PButtonRX, UY : PButtonUY, DY : PButtonDY}
 }
 ; 获取“收下”按钮位置
 CollectButtonPosition() {
