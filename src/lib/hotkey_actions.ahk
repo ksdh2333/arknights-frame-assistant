@@ -228,13 +228,13 @@ ActionBeginPause() {
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     PosC := SpeedButtonPositionColor()
     while(true) {
-        ; ToolTip("正在识别按钮！")  ; 调试代码
+        ToolTip("正在识别按钮！")  ; 调试代码
         if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCY, PosC.PBCLX, PosC.PBCY, 0xffffff, 10)
         {
             Send "{ESC Down}"
             USleep(50)
             Send "{ESC Up}"
-            ; ToolTip("已严肃暂停")  ; 调试代码
+            ToolTip("已严肃暂停")  ; 调试代码
             State.BlackScreenDetected := false
             State.ReadyForPause := false
             SetTimer CheckGameStatus, 800
