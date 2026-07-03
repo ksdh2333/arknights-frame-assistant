@@ -237,15 +237,15 @@ ActionBeginPause() {
             ; ToolTip("已严肃暂停")  ; 调试代码
             ; 为了降低暂停延迟，后置代理指挥识别，识别到是代理指挥时取消暂停
             isProxy := true
-            pointInfo := [] ; 调试代码
+            ; pointInfo := [] ; 调试代码
             for point in TakeOverButtonPositions() {
-                if !PixelSearch(&FoundX, &FoundY, point.x, point.y, point.x, point.y, point.color, 35) ; 接管按钮在开局会有较大透明度变化，容错 35
+                if !PixelSearch(&FoundX, &FoundY, point.LX, point.Y, point.RX, point.Y, point.C, 35) ; 接管按钮在开局会有较大透明度变化，容错 35
                 {
                     isProxy := false
-                    ; break
+                    break
                 }
-                color := PixelGetColor(point.x, point.y)
-                pointInfo.Push(Format("({:.0f},{:.0f})={:#x}", point.x, point.y, color)) ; 调试代码
+                ; color := PixelGetColor(point.x, point.y)
+                ; pointInfo.Push(Format("({:.0f},{:.0f})={:#x}", point.x, point.y, color)) ; 调试代码
             }
             if isProxy {
                 Send "{ESC Down}"
@@ -255,10 +255,10 @@ ActionBeginPause() {
             } else {
                 ; ToolTip("没有找到代理指挥")  ; 调试代码
             }
-            infoStr := ""
-            for info in pointInfo
-                infoStr .= (infoStr ? ", " : "") . info
-            ToolTip("坐标颜色: " . infoStr)  ; 调试代码，检测到是代理指挥时依次输出所有检测成功的坐标和颜色
+            ;;infoStr := ""
+            ; for info in pointInfo
+            ;     infoStr .= (infoStr ? ", " : "") . info
+            ; ToolTip("坐标颜色: " . infoStr)  ; 调试代码，检测到是代理指挥时依次输出所有检测成功的坐标和颜色
 
             State.BlackScreenDetected := false
             State.ReadyForPause := false
@@ -563,31 +563,31 @@ HarvestButtonPosition() {
 ; 获取代理接管作战按钮颜色识别位置（“手”图标、按钮右上角、按钮右下角）
 TakeOverButtonPositions() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    ; 获取“手”图标位置
-    PButtonHX := ww * 0.28125, PButtonHY := wh * 0.9259
+    ; 获取“手”左侧 x 坐标
+    PButtonHLX := ww * 0.285156
+    ; 获取“手”右侧 x 坐标
+    PButtonHRX := ww * 0.308984
+    ; 获取“手” y 坐标
+    PButtonHY := wh * 0.925694
     ; 获取按钮左侧 x 坐标
-    PButtonLX := ww * 0.2625
-    ; 获取按钮中部 x 坐标
-    PButtonMX := ww * 0.3375
+    PButtonLX := ww * 0.325000
     ; 获取按钮右侧 x 坐标
-    PButtonRX := ww *0.3755
+    PButtonRX := ww * 0.348828
     ; 获取按钮上部 y 坐标
-    PButtonRUY := wh * 0.8750
+    PButtonUY := wh * 0.888194
     ; 获取按钮下部 y 坐标
-    PButtonRDY := wh * 0.9388
+    PButtonDY := wh * 0.932638
     ; 设定“手”图标颜色
     PButtonHColor := 0xe0e0e0
     ; 设定按钮背景颜色
     PButtonBColor := 0x323232
     return [
         ; "手"图标位置和颜色
-        {x: PButtonHX, y: PButtonHY, color: PButtonHColor}, 
-        ; 按钮左侧位置和颜色
-        {x: PButtonLX, y: PButtonRUY, color: PButtonBColor}, {x: PButtonLX, y: PButtonRDY, color: PButtonBColor}, 
-        ; 按钮中部位置和颜色
-        {x: PButtonMX, y: PButtonRUY, color: PButtonBColor}, {x: PButtonMX, y: PButtonRDY, color: PButtonBColor}, 
-        ; 按钮右侧位置和颜色
-        {x: PButtonRX, y: PButtonRUY, color: PButtonBColor}, {x: PButtonRX, y: PButtonRDY, color: PButtonBColor}
+        {LX : PButtonHLX, RX : PButtonHRX, Y: PButtonHY, C: PButtonHColor}, 
+        ; 按钮上半部分位置和颜色
+        {LX : PButtonLX, RX : PButtonRX, Y: PButtonUY, C: PButtonBColor}, 
+        ; 按钮下半部分位置和颜色
+        {LX : PButtonLX, RX : PButtonRX, Y: PButtonDY, C: PButtonBColor}
     ]
 }
 ; 获取“收下”按钮位置
