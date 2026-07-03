@@ -239,9 +239,10 @@ ActionBeginPause() {
             isProxy := true
             ; pointInfo := [] ; 调试代码
             for point in TakeOverButtonPositions() {
-                if !PixelSearch(&FoundX, &FoundY, point.LX, point.Y, point.RX, point.Y, point.C, 35) ; 接管按钮在开局会有较大透明度变化，容错 35
+                if !PixelSearch(&FoundX, &FoundY, point.LX, point.Y, point.RX, point.Y, point.C, 20)
                 {
                     isProxy := false
+                    ; ToolTip("此识别不对：" . point.LX . " " . point.Y . "→" . point.RX . " " . point.Y . " " . Format("{1:X}", point.C) . " " . "实际识别到的：" . PixelGetColor(point.LX, point.Y))
                     break
                 }
                 ; color := PixelGetColor(point.x, point.y)
@@ -560,34 +561,35 @@ HarvestButtonPosition() {
     PButtonY := wh * 0.9527
     return {PBX: PButtonX, PBY: PButtonY}
 }
-; 获取代理接管作战按钮颜色识别位置（“手”图标、按钮右上角、按钮右下角）
+; 获取代理接管作战按钮颜色识别位置
 TakeOverButtonPositions() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    ; 获取“手”左侧 x 坐标
-    PButtonHLX := ww * 0.285156
-    ; 获取“手”右侧 x 坐标
-    PButtonHRX := ww * 0.308984
-    ; 获取“手” y 坐标
-    PButtonHY := wh * 0.925694
-    ; 获取按钮左侧 x 坐标
-    PButtonLX := ww * 0.325000
-    ; 获取按钮右侧 x 坐标
-    PButtonRX := ww * 0.348828
-    ; 获取按钮上部 y 坐标
-    PButtonUY := wh * 0.888194
-    ; 获取按钮下部 y 坐标
-    PButtonDY := wh * 0.932638
-    ; 设定“手”图标颜色
-    PButtonHColor := 0xe0e0e0
+    ; 获取 x1 坐标
+    X1 := ww * 0.336914
+    ; 获取 x2 坐标
+    X2 := ww * 0.347167
+    ; 获取 x3 坐标
+    X3 := ww * 0.357421
+    ; 获取 x4 坐标
+    X4 := ww * 0.367675
+    
+    ; 获取上方 y 坐标
+    UY := wh * 0.887962
+    ; 获取中线 y 坐标
+    MY := wh * 0.914814
+    ; 获取下方 y 坐标
+    DY := wh * 0.939814
+
+    ; 设定中线识别颜色
+    MColor := 0x333333
     ; 设定按钮背景颜色
-    PButtonBColor := 0x323232
+    BColor := 0x322C2C
     return [
-        ; "手"图标位置和颜色
-        {LX : PButtonHLX, RX : PButtonHRX, Y: PButtonHY, C: PButtonHColor}, 
-        ; 按钮上半部分位置和颜色
-        {LX : PButtonLX, RX : PButtonRX, Y: PButtonUY, C: PButtonBColor}, 
-        ; 按钮下半部分位置和颜色
-        {LX : PButtonLX, RX : PButtonRX, Y: PButtonDY, C: PButtonBColor}
+        ; 线识别坐标
+        {LX : X1, RX : X4, Y: MY, C: MColor}, 
+        ; 点识别坐标
+        ; {LX : X1, RX : X1, Y: UY, C: BC}, {LX : X2, RX : X2, Y: UY, C: BC}, {LX : X3, RX : X3, Y: UY, C: BC}, {LX : X4, RX : X4, Y: UY, C: BC}, 
+        {LX : X1, RX : X1, Y: DY, C: BColor}, {LX : X2, RX : X2, Y: DY, C: BColor}, {LX : X3, RX : X3, Y: DY, C: BColor}, {LX : X4, RX : X4, Y: DY, C: BColor}
     ]
 }
 ; 获取“收下”按钮位置
