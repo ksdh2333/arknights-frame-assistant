@@ -26,6 +26,27 @@ ActionGameSpeed(ThisHotkey) {
         return
     PureKeyWait(ThisHotkey)
 }
+; 前进16ms
+Action16ms(ThisHotkey) {
+    try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
+    if !IsMouseInClient() {
+        try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
+        return
+    }
+    delay := Integer(Config.GetCustom("FrameSkip16msDelay"))
+    Send "{ESC Down}"
+    USleep(delay)
+    Send "{Space Down}"
+    USleep(50)
+    Send "{ESC Up}"
+    Send "{Space Up}"
+    if InStr(ThisHotkey, "Wheel") {
+        try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
+        return
+    }
+    PureKeyWait(ThisHotkey)
+    try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
+}
 ; 前进33ms，由于波动，过帧间隔设置为30ms，避免一次过两帧
 Action33ms(ThisHotkey) {
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
@@ -33,8 +54,9 @@ Action33ms(ThisHotkey) {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
     }
+    delay := Integer(Config.GetCustom("FrameSkip33msDelay"))
     Send "{ESC Down}"
-    USleep(30)
+    USleep(delay)
     Send "{Space Down}"
     USleep(50)
     Send "{ESC Up}"
@@ -53,8 +75,9 @@ Action166ms(ThisHotkey) {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
     }
+    delay := Integer(Config.GetCustom("FrameSkip166msDelay"))
     Send "{ESC Down}"
-    USleep(165)
+    USleep(delay)
     Send "{Space Down}"
     USleep(50)
     Send "{ESC Up}"
@@ -228,13 +251,24 @@ ActionBeginPause() {
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     PosC := SpeedButtonPositionColor()
     while(true) {
-        ToolTip("正在识别按钮！")  ; 调试代码
+        ; ToolTip("正在识别按钮！")  ; 调试代码
         if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCY, PosC.PBCLX, PosC.PBCY, 0xffffff, 10)
         {
             Send "{ESC Down}"
             USleep(50)
             Send "{ESC Up}"
-            ToolTip("已严肃暂停")  ; 调试代码
+            ; ToolTip("已严肃暂停")  ; 调试代码
+            ; 为了降低暂停延迟，后置代理指挥识别，识别到是代理指挥时取消暂停
+            TobC := TakeOverButtonPositions()
+            if ImageSearch(&OutputVarX, &OutputVarY, TobC.LX, Tobc.UY, TobC.RX, TobC.DY, "*90 resources\images\TakeOverButton_1.png") or ImageSearch(&OutputVarX, &OutputVarY, TobC.LX, Tobc.UY, TobC.RX, TobC.DY, "*90 resources\images\TakeOverButton_2.png") { ; 0 帧暂停接管按钮半透明导致至少需要 45 容错
+                Send "{ESC Down}"
+                USleep(50)
+                Send "{ESC Up}"
+                ; ToolTip("是代理指挥，取消暂停")  ; 调试代码
+            } else {
+                ; ToolTip("没有找到代理指挥")  ; 调试代码
+            }
+
             State.BlackScreenDetected := false
             State.ReadyForPause := false
             SetTimer CheckGameStatus, 800
@@ -534,6 +568,13 @@ HarvestButtonPosition() {
     PButtonX := ww * 0.1297
     PButtonY := wh * 0.9527
     return {PBX: PButtonX, PBY: PButtonY}
+}
+; 获取代理接管作战按钮颜色识别位置
+TakeOverButtonPositions() {
+    WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
+    PButtonLX := ww * 0.3651, PButtonRX := ww * 0.4073
+    PButtonUY := wh * 0.8685, PButtonDY := wh * 0.9546
+    return {LX : PButtonLX, RX : PButtonRX, UY : PButtonUY, DY : PButtonDY}
 }
 ; 获取“收下”按钮位置
 CollectButtonPosition() {
