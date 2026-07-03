@@ -106,6 +106,6 @@ BlackScreenPoints() {
 }
 ; 停止搜索Loading
 StopSearchLoading() {
-    SetTimer CheckGameStatus, 1000
+    SetTimer CheckGameStatus, 800
     State.BlackScreenDetected := false
 }
