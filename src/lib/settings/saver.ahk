@@ -49,6 +49,18 @@ class Saver {
             }
         }
 
+        ; 验证游戏 UI 缩放设置范围
+        if (SavedObj.HasProp("GameUIScale") && SavedObj.GameUIScale != "") {
+            if !RegExMatch(SavedObj.GameUIScale, "^\d+$") {
+                MessageBox.Error("游戏 UI 缩放设置必须为 90~100 的整数。", "保存失败")
+                Exit
+            }
+            if (SavedObj.GameUIScale < 90 || SavedObj.GameUIScale > 100) {
+                MessageBox.Error("游戏 UI 缩放设置必须在 90~100 之间。", "保存失败")
+                Exit
+            }
+        }
+
         ; 保存到INI
         Config.SaveToIni(SavedObj)
     }
