@@ -451,12 +451,7 @@ class GuiManager {
         this.CustomControls.Push(editFrameSkip3)
         
         ; 分类"关于"
-        ; 确保logo.png可用（编译时嵌入exe，运行时提取到AppData）
-        logoPath := A_AppData "\ArknightsFrameAssistant\PC\logo.png"
-        logoExpectedSize := 341766
-        needExtract := !FileExist(logoPath) || FileGetSize(logoPath) != logoExpectedSize
-        if (needExtract)
-            FileInstall "..\logo.png", logoPath, 1
+        logoPath := FileExtractor.LogoPath
 
         this.MainGui.Add("Text", "x160 y48 w0 h0 Section")
         logoSize := 256

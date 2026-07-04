@@ -38,6 +38,9 @@ if not A_IsAdmin
 ; 包含事件总线
 #Include ./lib/eventbus.ahk
 
+; 包含文件提取模块
+#Include ./lib/file_extractor.ahk
+
 ; 包含功能实现
 #Include ./lib/hotkey_actions.ahk
 
@@ -61,6 +64,10 @@ if not A_IsAdmin
 
 ; 加载设置
 Loader.LoadSettings()
+
+; 确保嵌入文件已提取到 AppData
+FileExtractor.EnsureExtracted()
+
 HotkeyController.HotkeyOn()
 
 ; 包含更新公告模块
