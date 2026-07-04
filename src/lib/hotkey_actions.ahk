@@ -294,7 +294,7 @@ ActionBeginPause() {
 
             State.BlackScreenDetected := false
             State.ReadyForPause := false
-            SetTimer CheckGameStatus, 800
+            SetTimer CheckGameStatus, 400
             break
         }
     }

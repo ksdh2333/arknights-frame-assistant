@@ -1,6 +1,6 @@
 ; == 游戏状态监控 ==
 ; 自动退出计时器
-SetTimer CheckGameStatus, 800
+SetTimer CheckGameStatus, 400
 
 ; 检查游戏状态
 CheckGameStatus() {
@@ -34,7 +34,7 @@ CheckGameStatus() {
             if (missCount <= 1) {
                 State.BlackScreenDetected := true
                 SetTimer StopSearchLoading, -8000
-                SetTimer CheckGameStatus, 300
+                SetTimer CheckGameStatus, 200
             }
             try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         }
@@ -108,6 +108,6 @@ BlackScreenPoints() {
 }
 ; 停止搜索Loading
 StopSearchLoading() {
-    SetTimer CheckGameStatus, 800
+    SetTimer CheckGameStatus, 400
     State.BlackScreenDetected := false
 }
