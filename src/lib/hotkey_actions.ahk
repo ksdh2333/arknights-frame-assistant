@@ -268,7 +268,7 @@ ActionBeginPause() {
                 if !PixelSearch(&FoundX, &FoundY, point.LX, point.Y, point.RX, point.Y, point.C, 20)
                 {
                     isProxy := false
-                    ; ToolTip("此识别不对：" . point.LX . " " . point.Y . "→" . point.RX . " " . point.Y . " " . Format("{1:X}", point.C) . " " . "实际识别到的：" . PixelGetColor(point.LX, point.Y))
+                    ; ToolTip("线点检测不通过：" . point.LX . " " . point.Y . "→" . point.RX . " " . point.Y . " " . Format("{1:X}", point.C) . " " . "实际识别到的：" . PixelGetColor(point.LX, point.Y))
                     break
                 }
                 ; color := PixelGetColor(point.x, point.y)
@@ -277,10 +277,11 @@ ActionBeginPause() {
 
             ; 第二层：ImageSearch 兜底（线点漏检时补救）
             if !isProxy {
-                if ImageSearch(&OutputVarX, &OutputVarY, TobC.ImageRegion.LX, TobC.ImageRegion.UY, TobC.ImageRegion.RX, TobC.ImageRegion.DY, "*90 " FileExtractor.TakeOver1Path) or ImageSearch(&OutputVarX, &OutputVarY, TobC.ImageRegion.LX, TobC.ImageRegion.UY, TobC.ImageRegion.RX, TobC.ImageRegion.DY, "*90 " FileExtractor.TakeOver2Path) { ; 0 帧暂停接管按钮半透明导致至少需要 45 容错
+                if ImageSearch(&OutputVarX, &OutputVarY, TobC.ImageRegion.LX, TobC.ImageRegion.UY, TobC.ImageRegion.RX, TobC.ImageRegion.DY, "*60 " FileExtractor.TakeOver1Path) or ImageSearch(&OutputVarX, &OutputVarY, TobC.ImageRegion.LX, TobC.ImageRegion.UY, TobC.ImageRegion.RX, TobC.ImageRegion.DY, "*60 " FileExtractor.TakeOver2Path) { ; 0 帧暂停接管按钮半透明导致至少需要 45 容错
                     isProxy := true
                 }
-            }
+            } else 
+                ; ToolTip("图像识别不通过")
 
             if isProxy {
                 Send "{ESC Down}"
