@@ -249,10 +249,10 @@ ActionSwitchView(ThisHotkey) {
 ; 开局暂停
 ActionBeginPause() {
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
-    PosC := PauseButtonPositionColor()
+    PosC := SpeedButtonPositionColor()
     while(true) {
         ; ToolTip("正在识别按钮！")  ; 调试代码
-        if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCY, PosC.PBCLX, PosC.PBCY, 0xd8d8d8, 10)
+        if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCUY, PosC.PBCLX, PosC.PBCDY, 0xffffff, 10)
         {
             Send "{ESC Down}"
             USleep(50)
@@ -554,13 +554,14 @@ PauseButtonPositionRight() {
     PButtonRY := wh * 0.0700
     return {PBRX: PButtonRX, PBRY: PButtonRY}
 }
-; 获取暂停按钮颜色识别位置
-PauseButtonPositionColor() {
+; 获取自动暂停倍速按钮识别位置
+SpeedButtonPositionColor() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    PButtonCLX := ww * 0.9375
-    PButtonCRX := ww * 0.9473
-    PButtonCY := wh * 0.0600
-    return {PBCLX: PButtonCLX, PBCRX: PButtonCRX, PBCY: PButtonCY}
+    PButtonCLX := ww * 0.8450
+    PButtonCRX := ww * 0.8807
+    PButtonCUY := wh * 0.0713
+    PButtonCDY := wh * 0.0870
+    return {PBCLX: PButtonCLX, PBCRX: PButtonCRX, PBCUY: PButtonCUY, PBCDY: PButtonCDY}
 }
 ; 获取基建收取按钮位置
 HarvestButtonPosition() {
