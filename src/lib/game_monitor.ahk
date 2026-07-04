@@ -18,18 +18,20 @@ CheckGameStatus() {
 
     ; 自动开局暂停
     if (Config.GetImportant("AutoBeginPause") == "1" && WinActive("ahk_exe Arknights.exe")) {
-        ; 寻找黑屏：遍历 17 个全屏采样点，全部为黑色才判定黑屏
+        ; 寻找黑屏：遍历 17 个全屏采样点，允许 1 个点被游戏鼠标遮挡
         if (State.BlackScreenDetected == false) {
             try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
-            allBlack := true
+            missCount := 0
             for point in BlackScreenPoints() {
                 if !PixelSearch(&FoundX, &FoundY, point.x, point.y, point.x, point.y, 0x000000, 10) {
-                    allBlack := false
-                    ; ToolTip("并非黑屏")
-                    break
+                    missCount++
+                    if (missCount > 1) {
+                        ; ToolTip("并非黑屏")
+                        break
+                    }
                 }
             }
-            if (allBlack) {
+            if (missCount <= 1) {
                 State.BlackScreenDetected := true
                 SetTimer StopSearchLoading, -8000
                 SetTimer CheckGameStatus, 300
