@@ -285,6 +285,9 @@ ActionBeginPause() {
         if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCUY, PosC.PBCLX, PosC.PBCDY, 0xffffff, 10)
         {
             if !IsInLevel() {
+                State.BlackScreenDetected := false
+                State.ReadyForPause := false
+                SetTimer CheckGameStatus, 400
                 return
             }
             Send "{ESC Down}"
