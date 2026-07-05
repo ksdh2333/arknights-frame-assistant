@@ -2,6 +2,9 @@
 ; -- 常规作战 --
 ; 按下暂停
 ActionPressPause(ThisHotkey) {
+    if !IsInLevel() {
+        return
+    }
     Send "{ESC Down}"
     USleep(50)
     Send "{ESC Up}"
@@ -28,6 +31,9 @@ ActionGameSpeed(ThisHotkey) {
 }
 ; 前进16ms
 Action16ms(ThisHotkey) {
+    if !IsInLevel() {
+        return
+    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -49,6 +55,9 @@ Action16ms(ThisHotkey) {
 }
 ; 前进33ms，由于波动，过帧间隔设置为30ms，避免一次过两帧
 Action33ms(ThisHotkey) {
+    if !IsInLevel() {
+        return
+    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -70,6 +79,9 @@ Action33ms(ThisHotkey) {
 }
 ; 前进166ms
 Action166ms(ThisHotkey) {
+    if !IsInLevel() {
+        return
+    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -91,6 +103,9 @@ Action166ms(ThisHotkey) {
 }
 ; 暂停选中
 ActionPauseSelect(ThisHotkey) {
+    if !IsInLevel() {
+        return
+    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -132,6 +147,9 @@ ActionRetreat(ThisHotkey) {
 }
 ; 一键技能
 ActionOneClickSkill(ThisHotkey) {
+    if !IsInLevel() {
+        return
+    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -152,6 +170,9 @@ ActionOneClickSkill(ThisHotkey) {
 }
 ; 一键撤退
 ActionOneClickRetreat(ThisHotkey) {
+    if !IsInLevel() {
+        return
+    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -172,6 +193,9 @@ ActionOneClickRetreat(ThisHotkey) {
 }
 ; 暂停技能
 ActionPauseSkill(ThisHotkey) {
+    if !IsInLevel() {
+        return
+    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -199,6 +223,9 @@ ActionPauseSkill(ThisHotkey) {
 }
 ; 暂停撤退
 ActionPauseRetreat(ThisHotkey) {
+    if !IsInLevel() {
+        return
+    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -227,6 +254,9 @@ ActionPauseRetreat(ThisHotkey) {
 
 ; 视角切换
 ActionSwitchView(ThisHotkey) {
+    if !IsInLevel() {
+        return
+    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -254,6 +284,12 @@ ActionBeginPause() {
         ; ToolTip("正在识别按钮！")  ; 调试代码
         if PixelSearch(&FoundX, &FoundY, PosC.PBCRX, PosC.PBCUY, PosC.PBCLX, PosC.PBCDY, 0xffffff, 10)
         {
+            if !IsInLevel() {
+                State.BlackScreenDetected := false
+                State.ReadyForPause := false
+                SetTimer CheckGameStatus, 400
+                return
+            }
             Send "{ESC Down}"
             USleep(50)
             Send "{ESC Up}"
@@ -555,6 +591,23 @@ IsMouseInClient() {
     if ypos < 0
         return false
     return true
+}
+; 获取放弃按钮位置
+AbandonButtonPosition() {
+    WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
+    PButtonLX := ww * 0.0474
+    PButtonRX := ww * 0.0734
+    PButtonUY := wh * 0.0444
+    PButtonDY := wh * 0.0694
+    return {PBLX: PButtonLX, PBUY: PButtonUY, PBRX: PButtonRX, PBDY: PButtonDY}
+}
+; 关卡界面检测
+IsInLevel() {
+    AbdC := AbandonButtonPosition()
+    if PixelSearch(&FoundX, &FoundY, AbdC.PBRX, AbdC.PBDY, AbdC.PBLX, AbdC.PBUY, 0x8c8c8c, 0) {
+        return true
+    }
+    return false
 }
 ; 获取暂停按钮位置
 PauseButtonPosition() {
