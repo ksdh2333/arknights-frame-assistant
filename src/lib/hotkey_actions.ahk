@@ -276,6 +276,34 @@ ActionSwitchView(ThisHotkey) {
     PureKeyWait(ThisHotkey)
     try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
 }
+; 快捷切换开局暂停开关
+ActionBeginPauseSwitch(ThisHotkey) {
+    currentValue := Config.GetImportant("AutoBeginPause")
+    newValue := (currentValue = "1") ? "0" : "1"
+    Config.SetImportant("AutoBeginPause", newValue)
+    try {
+        GuiManager.SetControlValue("AutoBeginPause", newValue = "1")
+    }
+    EventBus.Publish("HotkeyOff")
+    EventBus.Publish("UnsetSwitchKey")
+    Saver.SettingsIniWrite()
+    Loader.LoadSettings()
+    if(HotkeyController.HotkeyState == true) {
+        HotkeyController.EnableByTab(GuiManager.LastActiveTab)
+    }
+    EventBus.Publish("SetSwitchKey")
+    Saver.ResetGameStateIfNeeded()
+    if (newValue = "1") {
+        TrayTip
+        TrayTip("已开启开局自动暂停", "AFA")
+    } else {
+        TrayTip
+        TrayTip("已关闭开局自动暂停", "AFA")
+    }
+    if InStr(ThisHotkey, "Wheel")
+        return
+    PureKeyWait(ThisHotkey)
+}
 ; 开局暂停
 ActionBeginPause() {
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")

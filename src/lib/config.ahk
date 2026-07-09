@@ -36,6 +36,7 @@ class Constants {
         "PauseSkill", "暂停技能",
         "PauseRetreat", "暂停撤退",
         "SwitchView", "视角切换",
+        "AutoBeginPauseSwitch", "开局自动暂停开关",
         ; 快捷操作
         "LButtonClick", "左键点击",
         "CeaseOperations", "放弃行动",
@@ -111,6 +112,7 @@ class Config {
         "PauseSkill", "XButton2",
         "PauseRetreat", "XButton1",
         "SwitchView", "",
+        "AutoBeginPauseSwitch", "",
         ; 快捷操作
         "LButtonClick", "z",
         "CeaseOperations", "",

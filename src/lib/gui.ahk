@@ -191,10 +191,13 @@ class GuiManager {
         this.NotOtherControls.Push(this.GuiFrame)
 
         ; 自动暂停开关
-        checkboxAutoBeginPause := this.MainGui.Add("Checkbox", "x+30 yp+2 vAutoBeginPause", " 开局自动暂停")
+        checkboxAutoBeginPause := this.MainGui.Add("Checkbox", "x+134 yp+2 vAutoBeginPause", " 开局自动暂停")
         checkboxAutoBeginPause.OnEvent("Click", (*) => this.TrackChange("AutoBeginPause"))
         this.MainGui["AutoBeginPause"].Value := Config.GetImportant("AutoBeginPause")
         this.NotOtherControls.Push(checkboxAutoBeginPause)
+        KeyVar := "AutoBeginPauseSwitch"
+        edit := this.MainGui.Add("Edit", "x+5 yp-4 w140 Center -TabStop Uppercase v" KeyVar, Config.GetHotkey(KeyVar))
+        this.NotOtherControls.Push(edit)
 
         ; 帧数设置提示语
         this.MainGui.SetFont("s9 c1994d2")
