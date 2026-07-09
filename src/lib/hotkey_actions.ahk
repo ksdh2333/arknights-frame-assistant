@@ -285,14 +285,9 @@ ActionBeginPauseSwitch(ThisHotkey) {
         GuiManager.SetControlValue("AutoBeginPause", newValue = "1")
     }
     EventBus.Publish("HotkeyOff")
-    EventBus.Publish("UnsetSwitchKey")
-    Saver.SettingsIniWrite()
+    IniWrite(newValue, Config.IniFile, "Main", "AutoBeginPause")
     Loader.LoadSettings()
-    if(HotkeyController.HotkeyState == true) {
-        HotkeyController.EnableByTab(GuiManager.LastActiveTab)
-    }
-    EventBus.Publish("SetSwitchKey")
-    Saver.ResetGameStateIfNeeded()
+    HotkeyController.EnableByTab(GuiManager.LastActiveTab)
     if (newValue = "1") {
         TrayTip
         TrayTip("已开启开局自动暂停", "AFA")
