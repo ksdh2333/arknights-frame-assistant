@@ -295,10 +295,9 @@ ActionBeginPause() {
             Send "{ESC Up}"
             ; ToolTip("已严肃暂停")  ; 调试代码
             ; 为了降低暂停延迟，后置代理指挥识别，识别到是代理指挥时取消暂停
-            TobC := TakeOverButtonPositions()
-
-            ; 第一层：线点识别（精确，优先）
             isProxy := false
+            TobC := TakeOverButtonPositions()
+            ; 第一层：线点识别（精确，优先）
             ; pointInfo := [] ; 调试代码
             ; for point in TobC.LinePoints {
             ;     if !PixelSearch(&FoundX, &FoundY, point.LX, point.Y, point.RX, point.Y, point.C, 20)
@@ -310,21 +309,20 @@ ActionBeginPause() {
             ;     ; color := PixelGetColor(point.x, point.y)
             ;     ; pointInfo.Push(Format("({:.0f},{:.0f})={:#x}", point.x, point.y, color)) ; 调试代码
             ; }
-
-            ; 第二层：ImageSearch 兜底（线点漏检时补救）
-            if !isProxy {
-                if ImageSearch(&OutputVarX, &OutputVarY, TobC.ImageRegion.LX, TobC.ImageRegion.UY, TobC.ImageRegion.RX, TobC.ImageRegion.DY, "*90 " FileExtractor.TakeOver1Path) or ImageSearch(&OutputVarX, &OutputVarY, TobC.ImageRegion.LX, TobC.ImageRegion.UY, TobC.ImageRegion.RX, TobC.ImageRegion.DY, "*90 " FileExtractor.TakeOver2Path) { ; 0 帧暂停接管按钮半透明导致至少需要 90 容错
-                    isProxy := true
-                }
-            } 
-            ; else 
-            ;     ToolTip("图像识别不通过")
-
+            ; 接管代理按钮右侧边缘
+            if ImageSearch(&OutputVarX, &OutputVarY, TobC.ImageRegion.RLX, TobC.ImageRegion.RUY, TobC.ImageRegion.RRX, TobC.ImageRegion.RDY, "*90 " FileExtractor.TakeOver1Path) or ImageSearch(&OutputVarX, &OutputVarY, TobC.ImageRegion.RLX, TobC.ImageRegion.RUY, TobC.ImageRegion.RRX, TobC.ImageRegion.RDY, "*90 " FileExtractor.TakeOver2Path) { ; 0 帧暂停接管按钮半透明导致至少需要 90 容错
+                isProxy := true
+            }
+            ; 接管代理按钮“手”图标拇指
+            if !ImageSearch(&OutputVarX, &OutputVarY, TobC.ImageRegion.HLX, TobC.ImageRegion.HUY, TobC.ImageRegion.HRX, TobC.ImageRegion.HDY, "*90 " FileExtractor.TakeOver3Path) {
+                ToolTip("图2识别失败")
+                isProxy := false
+            }
             if isProxy {
                 Send "{ESC Down}"
                 USleep(50)
                 Send "{ESC Up}"
-                ; ToolTip("是代理指挥，取消暂停")  ; 调试代码
+                ToolTip("是代理指挥，取消暂停")  ; 调试代码
             } else {
                 ; ToolTip("没有找到代理指挥")  ; 调试代码
             }
@@ -674,8 +672,12 @@ TakeOverButtonPositions() {
 
     ; === ImageSearch 搜索区域 ===
     ImageRegion := {
-        LX : ww * 0.3651, RX : ww * 0.4073,
-        UY : wh * 0.8685, DY : wh * 0.9546
+        ; 按钮右侧边缘
+        RLX : ww * 0.3651, RRX : ww * 0.4073,
+        RUY : wh * 0.8685, RDY : wh * 0.9546,
+        ; 按钮“手”图标
+        HLX : ww * 0.2583, HRX : ww * 0.3354,
+        HUY : wh * 0.9037, HDY : wh * 0.9620
     }
 
     ; return {LinePoints: LinePoints, ImageRegion: ImageRegion}

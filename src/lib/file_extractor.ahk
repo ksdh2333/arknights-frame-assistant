@@ -6,6 +6,7 @@ class FileExtractor {
     static LogoPath      := FileExtractor.BaseDir "\logo.png"
     static TakeOver1Path := FileExtractor.BaseDir "\TakeOverButton_1.png"
     static TakeOver2Path := FileExtractor.BaseDir "\TakeOverButton_2.png"
+    static TakeOver3Path := FileExtractor.BaseDir "\TakeOverButton_3.png"
 
     ; 确保所有嵌入文件已提取到 AppData
     static EnsureExtracted() {
@@ -18,5 +19,7 @@ class FileExtractor {
             FileInstall "resources\images\TakeOverButton_1.png", FileExtractor.TakeOver1Path, 1
         if (!FileExist(FileExtractor.TakeOver2Path))
             FileInstall "resources\images\TakeOverButton_2.png", FileExtractor.TakeOver2Path, 1
+        if (!FileExist(FileExtractor.TakeOver3Path))
+            FileInstall "resources\images\TakeOverButton_3.png", FileExtractor.TakeOver3Path, 1
     }
 }
