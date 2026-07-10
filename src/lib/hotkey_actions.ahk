@@ -453,13 +453,13 @@ ActionBack(ThisHotkey) {
         USleep(40)
         MouseMove xpos, ypos
         BlockInput "MouseMoveOff"
-        if InStr(ThisHotkey, "Wheel") {
-            try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
-            return
-        }
-        PureKeyWait(ThisHotkey)
-        try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
     }
+    if InStr(ThisHotkey, "Wheel") {
+        try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
+        return
+    }
+    PureKeyWait(ThisHotkey)
+    try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
 }
 ; 基建快速收取
 ActionHarvest(ThisHotkey) {
