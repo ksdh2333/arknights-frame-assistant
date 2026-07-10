@@ -424,6 +424,13 @@ ActionBack(ThisHotkey) {
             }
         }
     }
+    ; 局内放弃按钮
+    if !foundBack and IsInLevel() {
+        AbdC := AbandonButtonPosition()
+        if PixelSearch(&FoundX, &FoundY, AbdC.PBRX, AbdC.PBDY, AbdC.PBLX, AbdC.PBUY, 0x8c8c8c, 0) {
+            foundBack := true
+        }
+    }
     ; 集成战略大退红底按钮
     if !foundBack {
         ; 寻找红底左上角
