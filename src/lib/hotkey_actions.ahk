@@ -425,9 +425,9 @@ ActionBack(ThisHotkey) {
         }
     }
     ; 局内放弃按钮
-    if !foundBack and IsInLevel() {
+    if !foundBack {
         AbdC := AbandonButtonPosition()
-        if PixelSearch(&FoundX, &FoundY, AbdC.PBRX, AbdC.PBDY, AbdC.PBLX, AbdC.PBUY, 0x8c8c8c, 0) {
+        if PixelSearch(&FoundX, &FoundY, AbdC.PBRX, AbdC.PBDY, AbdC.PBLX, AbdC.PBUY, 0x8c8c8c, 0) or PixelSearch(&FoundX, &FoundY, AbdC.PBRX, AbdC.PBDY, AbdC.PBLX, AbdC.PBUY, 0x868686, 0) {
             foundBack := true
         }
     }
