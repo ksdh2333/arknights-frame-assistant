@@ -315,14 +315,14 @@ ActionBeginPause() {
             }
             ; 接管代理按钮“手”图标拇指
             if !ImageSearch(&OutputVarX, &OutputVarY, TobC.ImageRegion.HLX, TobC.ImageRegion.HUY, TobC.ImageRegion.HRX, TobC.ImageRegion.HDY, "*90 " FileExtractor.TakeOver3Path) {
-                ToolTip("图2识别失败")
+                ; ToolTip("图2识别失败")
                 isProxy := false
             }
             if isProxy {
                 Send "{ESC Down}"
                 USleep(50)
                 Send "{ESC Up}"
-                ToolTip("是代理指挥，取消暂停")  ; 调试代码
+                ; ToolTip("是代理指挥，取消暂停")  ; 调试代码
             } else {
                 ; ToolTip("没有找到代理指挥")  ; 调试代码
             }
