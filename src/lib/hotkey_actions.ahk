@@ -414,6 +414,16 @@ ActionSkip(ThisHotkey) {
 }
 ; 返回上级菜单
 ActionBack(ThisHotkey) {
+    Send "{v Down}"
+    Send "{ESC Down}"
+    USleep(50)
+    Send "{v Up}"
+    Send "{ESC Up}"
+    if InStr(ThisHotkey, "Wheel")
+        return
+    PureKeyWait(ThisHotkey)
+}
+/* ActionBack(ThisHotkey) {
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -482,7 +492,7 @@ ActionBack(ThisHotkey) {
     }
     PureKeyWait(ThisHotkey)
     try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
-}
+} */
 ; 基建快速收取
 ActionHarvest(ThisHotkey) {
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
@@ -721,13 +731,13 @@ SpeedButtonPositionColor() {
     PButtonCDY := wh * 0.0870
     return {PBCLX: PButtonCLX, PBCRX: PButtonCRX, PBCUY: PButtonCUY, PBCDY: PButtonCDY}
 }
-; 获取返回按钮识别位置
+/* ; 获取返回按钮识别位置
 BackButtonPosition() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
     PButtonLX := ww * 0.0260, PButtonRX := ww * 0.0552
     PButtonUY := wh * 0.0462, PButtonDY := wh * 0.0574
     return {PBLX: PButtonLX, PBUY: PButtonUY, PBRX: PButtonRX, PBDY: PButtonDY}
-}
+} */
 ; 获取基建收取按钮位置
 HarvestButtonPosition() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
