@@ -392,14 +392,74 @@ ActionSkip(ThisHotkey) {
 }
 ; 返回上级菜单
 ActionBack(ThisHotkey) {
-    Send "{v Down}"
-    Send "{ESC Down}"
-    USleep(50)
-    Send "{v Up}"
-    Send "{ESC Up}"
-    if InStr(ThisHotkey, "Wheel")
+    try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
+    if !IsMouseInClient() {
+        try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
+    }
+    foundBack := false
+    Pos := BackButtonPosition()
+    ; 寻找箭头时的步进量
+    step := 10
+    ; 黑底返回按钮
+    ; 寻找黑底左上角
+    PixelSearch(&FoundX, &FoundY, 0, 0, Pos.PBLX, Pos.PBUY, 0x313131, 5)
+    ; MouseMove FoundX, FoundY
+    try {
+        ; 寻找白色箭头右上角
+        PixelSearch(&FoundX, &FoundY, Pos.PBRX, FoundY, FoundX, Pos.PBDY, 0xffffff, 10)
+        ; MouseMove FoundX, FoundY
+        ; 向左下方向寻找白色，再向右寻找黑色，以确认是否为箭头形状
+        if PixelSearch(&FoundX, &FoundY, FoundX - step - 1, FoundY + step - 1, FoundX - step + 1, FoundY + step + 1, 0xffffff, 10) and PixelSearch(&FoundX, &FoundY, FoundX + step - 1, FoundY - 1, FoundX + step + 1, FoundY + 1, 0x313131, 10) {
+            foundBack := true
+        }
+    }
+    ; 白底返回按钮
+    if !foundBack {
+        PixelSearch(&FoundX, &FoundY, 0, 0, Pos.PBLX, Pos.PBUY, 0xfafafa, 10)
+        try {
+            PixelSearch(&FoundX, &FoundY, Pos.PBRX, FoundY, FoundX, Pos.PBDY, 0x4c4c4c, 10)
+            if PixelSearch(&FoundX, &FoundY, FoundX - step - 1, FoundY + step - 1, FoundX - step + 1, FoundY + step + 1, 0x4c4c4c, 10) and PixelSearch(&FoundX, &FoundY, FoundX + step - 1, FoundY - 1, FoundX + step + 1, FoundY + 1, 0xfafafa, 10) {
+                foundBack := true
+            }
+        }
+    }
+    ; 局内放弃按钮
+    if !foundBack {
+        AbdC := AbandonButtonPosition()
+        if PixelSearch(&FoundX, &FoundY, AbdC.PBRX, AbdC.PBDY, AbdC.PBLX, AbdC.PBUY, 0x8c8c8c, 0) or PixelSearch(&FoundX, &FoundY, AbdC.PBRX, AbdC.PBDY, AbdC.PBLX, AbdC.PBUY, 0x868686, 0) {
+            foundBack := true
+        }
+    }
+    ; 集成战略大退红底按钮
+    if !foundBack {
+        ; 寻找红底左上角
+        PixelSearch(&FoundX, &FoundY, 0, 0, Pos.PBLX, Pos.PBUY, 0x5a0000, 10)
+        ; 红底左上角右下方寻找白色
+        try {
+            if PixelSearch(&FoundX, &FoundY, Pos.PBRX, FoundY, FoundX, Pos.PBDY, 0xfafafa, 10) {
+                foundBack := true
+            }
+        }
+    }
+    if foundBack {
+        MouseGetPos &xpos, &ypos
+        BlockInput "MouseMove"
+        MouseMove FoundX, FoundY
+        Send "{Lbutton Down}"
+        USleep(40)
+        MouseMove FoundX, FoundY
+        Send "{LButton Up}"
+        USleep(40)
+        MouseMove xpos, ypos
+        BlockInput "MouseMoveOff"
+    }
+    if InStr(ThisHotkey, "Wheel") {
+        try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
+        return
+    }
     PureKeyWait(ThisHotkey)
+    try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
 }
 ; 基建快速收取
 ActionHarvest(ThisHotkey) {
@@ -426,7 +486,7 @@ ActionHarvest(ThisHotkey) {
     try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
 }
 ; 肉鸽收集藏品
-ActionCollectCollectibles(ThisHotkey){
+ActionCollectCollectibles(ThisHotkey) {
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -638,6 +698,13 @@ SpeedButtonPositionColor() {
     PButtonCUY := wh * 0.0713
     PButtonCDY := wh * 0.0870
     return {PBCLX: PButtonCLX, PBCRX: PButtonCRX, PBCUY: PButtonCUY, PBCDY: PButtonCDY}
+}
+; 获取返回按钮识别位置
+BackButtonPosition() {
+    WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
+    PButtonLX := ww * 0.0260, PButtonRX := ww * 0.0552
+    PButtonUY := wh * 0.0462, PButtonDY := wh * 0.0574
+    return {PBLX: PButtonLX, PBUY: PButtonUY, PBRX: PButtonRX, PBDY: PButtonDY}
 }
 ; 获取基建收取按钮位置
 HarvestButtonPosition() {
