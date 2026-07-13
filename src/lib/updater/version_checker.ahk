@@ -563,21 +563,62 @@ class VersionChecker {
 
     ; 内部：从国内源（COS+CDN）检查更新
     ; 返回格式与 _CheckFromGithub 一致
+    ; 正式版：仅查 /stable；测试版：查 /beta + /stable 取最高版本（与 GitHub 行为对齐）
     static _CheckFromDomestic(localVersion) {
         updateChannel := Config.GetImportant("UpdateChannel")
         isStable := (updateChannel == "1")
 
-        ; 拼接 version.json URL
-        channelPath := isStable ? "/stable" : "/beta"
-        jsonUrl := this.CdnBaseUrl channelPath "/version.json"
-
         this._Log("========== 国内源版本检查 ==========")
-        this._Log("URL: " jsonUrl)
+        this._Log("更新渠道: " (isStable ? "正式版" : "测试版"))
         this._Log("本地版本: " localVersion)
 
         if (localVersion = "") {
             return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "无法获取本地版本号"}
         }
+
+        ; 正式版：只查 stable
+        if (isStable) {
+            return this._CheckDomesticChannel(localVersion, "/stable")
+        }
+
+        ; 测试版：查 beta 和 stable，取版本号更高者
+        betaResult := this._CheckDomesticChannel(localVersion, "/beta")
+        stableResult := this._CheckDomesticChannel(localVersion, "/stable")
+
+        ; 两个都失败
+        betaFailed := (betaResult.status = "check_failed")
+        stableFailed := (stableResult.status = "check_failed")
+
+        if (betaFailed && stableFailed) {
+            ; 返回最后一次的错误（优先保留 beta 的错误信息）
+            return betaResult
+        }
+
+        ; 仅 beta 成功
+        if (stableFailed) {
+            return betaResult
+        }
+
+        ; 仅 stable 成功
+        if (betaFailed) {
+            return stableResult
+        }
+
+        ; 两个都成功 → 取版本号更高者
+        if (this._CompareVersions(betaResult.remoteVersion, stableResult.remoteVersion) >= 0) {
+            this._Log("测试版渠道: beta=" betaResult.remoteVersion " >= stable=" stableResult.remoteVersion "，使用 beta")
+            return betaResult
+        } else {
+            this._Log("测试版渠道: stable=" stableResult.remoteVersion " > beta=" betaResult.remoteVersion "，使用 stable")
+            return stableResult
+        }
+    }
+
+    ; 内部：从国内源指定渠道拉取 version.json 并解析
+    static _CheckDomesticChannel(localVersion, channelPath) {
+        jsonUrl := this.CdnBaseUrl channelPath "/version.json"
+
+        this._Log("URL: " jsonUrl)
 
         headersMap := Map(
             "Accept", "application/json",
@@ -778,10 +819,12 @@ class VersionChecker {
                 body := this._UnescapeJsonString(bodyMatch[1])
             }
 
-            ; 提取发布日期
+            ; 提取发布日期（优先 published_at，回退 date）
             date := ""
             if (RegExMatch(searchStr, '"published_at"\s*:\s*"([^"]*)"', &dateMatch)) {
                 date := SubStr(dateMatch[1], 1, 10)  ; 提取 YYYY-MM-DD
+            } else if (RegExMatch(searchStr, '"date"\s*:\s*"([^"]*)"', &dateMatch)) {
+                date := dateMatch[1]  ; 国内源 version.json 兼容
             }
 
             releases.Push({tag_name: tagName, prerelease: prerelease, downloadUrl: downloadUrl, body: body, date: date})
