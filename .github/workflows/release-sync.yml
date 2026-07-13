@@ -27,7 +27,17 @@ jobs:
 
       - name: Download release asset
         run: |
-          ASSET_URL="${{ github.event.release.assets[0].browser_download_url }}"
+          ASSET_URL=$(echo '${{ toJson(github.event.release.assets) }}' | \
+            python3 -c "
+import json, sys
+assets = json.load(sys.stdin)
+for a in assets:
+    if a['name'] == 'AFA.exe':
+        print(a['browser_download_url'])
+        sys.exit(0)
+print('Error: AFA.exe not found in release assets', file=sys.stderr)
+sys.exit(1)
+")
           curl -L -o AFA.exe "$ASSET_URL"
 
       - name: Setup coscmd
