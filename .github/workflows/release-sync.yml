@@ -67,4 +67,5 @@ jobs:
           tccli configure set secretId ${{ secrets.COS_SECRET_ID }}
           tccli configure set secretKey ${{ secrets.COS_SECRET_KEY }}
           tccli configure set region ${{ secrets.COS_REGION }}
-          tccli cdn PurgePathCache --Paths '["/'${{ steps.channel.outputs.name }}'/version.json"]' --FlushType flush
+          CHANNEL="${{ steps.channel.outputs.name }}"
+          tccli cdn PurgePathCache --Paths "[\"/${CHANNEL}/version.json\"]" --FlushType flush

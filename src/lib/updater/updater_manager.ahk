@@ -132,7 +132,6 @@ class Updater {
 
     ; 下载入口（含同源重试 + 降级备选源）
     static DownloadWithAltSource(params, triedFallback := false) {
-        UpdateUI.ShowDownloadingDialog(0)
         this._TryDownload(params, triedFallback)
     }
 
