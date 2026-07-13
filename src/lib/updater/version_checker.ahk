@@ -778,10 +778,12 @@ class VersionChecker {
                 body := this._UnescapeJsonString(bodyMatch[1])
             }
 
-            ; 提取发布日期
+            ; 提取发布日期（优先 published_at，回退 date）
             date := ""
             if (RegExMatch(searchStr, '"published_at"\s*:\s*"([^"]*)"', &dateMatch)) {
                 date := SubStr(dateMatch[1], 1, 10)  ; 提取 YYYY-MM-DD
+            } else if (RegExMatch(searchStr, '"date"\s*:\s*"([^"]*)"', &dateMatch)) {
+                date := dateMatch[1]  ; 国内源 version.json 兼容
             }
 
             releases.Push({tag_name: tagName, prerelease: prerelease, downloadUrl: downloadUrl, body: body, date: date})
