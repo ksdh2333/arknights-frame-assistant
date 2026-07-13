@@ -657,6 +657,7 @@ class VersionChecker {
     ; checkFn: 一个 Func 对象，签名为 (localVersion) → result
     static _CheckSingleSource(checkFn, sourceName, localVersion) {
         maxRetries := 3
+        lastResult := ""
         Loop maxRetries {
             this._Log(sourceName " 第 " A_Index "/" maxRetries " 次尝试...")
             result := checkFn(localVersion)
@@ -665,11 +666,15 @@ class VersionChecker {
                 return result
             }
 
+            lastResult := result
+
             if (A_Index < maxRetries) {
                 Sleep(1000)
             }
         }
-        return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: sourceName " 检查失败（重试 3 次）"}
+        ; 保留最后一次的真实错误信息，追加重试次数说明
+        lastResult.message .= "`n（已重试 " maxRetries " 次）"
+        return lastResult
     }
 
     ; 内部：尝试用首选源检查更新，每源重试 3 次，均失败后降级到备选源
