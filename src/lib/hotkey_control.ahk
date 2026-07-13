@@ -32,6 +32,7 @@ class HotkeyController {
         "OneClickRetreat", ActionOneClickRetreat,
         "PauseSkill", ActionPauseSkill,
         "PauseRetreat", ActionPauseRetreat,
+        "AutoBeginPauseSwitch", ActionBeginPauseSwitch,
         "LButtonClick", ActionLButtonClick,
         "CeaseOperations", ActionCeaseOperations,
         "Skip", ActionSkip,
@@ -70,7 +71,8 @@ class HotkeyController {
         "PauseSkill", true,
         "PauseRetreat", true,
         "SwitchView", true,
-        "BeginPause", true
+        "BeginPause", true,
+        "AutoBeginPauseSwitch", true
     )
 
     static QuickHotkeys := Map(

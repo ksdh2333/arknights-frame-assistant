@@ -42,7 +42,10 @@ class VersionChecker {
     
     ; GitHub API地址（仅正式版）
     static StableApiUrl := "https://api.github.com/repos/CloudTracey/arknights-frame-assistant/releases/latest"
-    
+
+    ; 国内源 CDN 基地址（正式版和测试版分别拼接 /stable/version.json 和 /beta/version.json）
+    static CdnBaseUrl := "https://release.arknightsframeassistant.com"
+
     ; Token验证API地址
     static TokenValidateUrl := "https://api.github.com/user"
     
@@ -125,12 +128,12 @@ class VersionChecker {
     
     ; 内部：构建HTTP请求对象
     ; 返回: {http, error} - error非空表示创建失败
-    static _CreateHttpRequest(url, token := "") {
+    static _CreateHttpRequest(url, token := "", acceptHeader := "application/vnd.github.v3+json") {
         try {
             http := ComObject("MSXML2.ServerXMLHTTP.6.0")
             ApplySystemProxy(http)
             http.Open("GET", url, true)
-            http.SetRequestHeader("Accept", "application/vnd.github.v3+json")
+            http.SetRequestHeader("Accept", acceptHeader)
             http.SetRequestHeader("User-Agent", "ArknightsFrameAssistant/" Version.Get())
             if (token != "")
                 http.SetRequestHeader("Authorization", "token " token)
@@ -351,28 +354,32 @@ class VersionChecker {
     ; 返回: {status, localVersion, remoteVersion, downloadUrl, message}
     static Check() {
         localVersion := Version.Get()
-        ; 检查是否使用GitHub Token进行更新检查
-        useGitHubToken := Config.GetImportant("UseGitHubToken")
-        if (useGitHubToken == 1) {
-            ; 检查是否配置了Token
-            gitHubToken := Config.GetImportant("GitHubToken")
-            if (gitHubToken != "") {
-                ; 如果配置了Token，先验证Token有效性
-                if (!this.TokenValidated) {
-                    tokenResult := this.ValidateToken(gitHubToken)
-                    if (!tokenResult.valid) {
-                        this._Log("Token验证失败，阻止更新检查")
-                        return {status: "token_invalid", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: tokenResult.message "。请检查GitHub Token设置。"}
+
+        ; Token 验证（仅 GitHub 源需要，国内源不依赖 Token）
+        updateSource := Config.GetImportant("UpdateSource")
+        if (updateSource == "2") {
+            useGitHubToken := Config.GetImportant("UseGitHubToken")
+            if (useGitHubToken == 1) {
+                gitHubToken := Config.GetImportant("GitHubToken")
+                if (gitHubToken != "") {
+                    if (!this.TokenValidated) {
+                        tokenResult := this.ValidateToken(gitHubToken)
+                        if (!tokenResult.valid) {
+                            this._Log("Token验证失败，阻止更新检查")
+                            return {status: "token_invalid", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: tokenResult.message "。请检查GitHub Token设置。"}
+                        }
                     }
                 }
             }
         }
-        ; 直接从API获取最新版本
-        return this._FetchFromApi(localVersion, useGitHubToken)
+
+        return this._TryCheckWithFallback(localVersion)
     }
     
-    ; 内部：从API获取最新版本
-    static _FetchFromApi(localVersion, useGitHubToken) {
+    ; 内部：从 GitHub API 获取最新版本
+    ; 返回格式: {status, localVersion, remoteVersion, downloadUrl, message, changelogBody?}
+    static _CheckFromGithub(localVersion) {
+        useGitHubToken := Config.GetImportant("UseGitHubToken")
         updateChannel := Config.GetImportant("UpdateChannel")
         isStable := (updateChannel == "1")
         
@@ -545,13 +552,160 @@ class VersionChecker {
             this._Log("ErrorCode: " errorInfo.code)
             this._Log("ErrorDesc: " errorInfo.desc)
             this._Log("ErrorMessage: " err.Message)
-            
+
             userMessage := errorInfo.desc
             if (InStr(errorInfo.desc, "超时"))
                 userMessage := "网络请求超时，请检查网络连接后重试。`n`n如果问题持续存在，请尝试配置GitHub Token。"
-            
+
             return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: userMessage, errorDetail: "[" errorInfo.code "] " err.Message}
         }
+    }
+
+    ; 内部：从国内源（COS+CDN）检查更新
+    ; 返回格式与 _CheckFromGithub 一致
+    static _CheckFromDomestic(localVersion) {
+        updateChannel := Config.GetImportant("UpdateChannel")
+        isStable := (updateChannel == "1")
+
+        ; 拼接 version.json URL
+        channelPath := isStable ? "/stable" : "/beta"
+        jsonUrl := this.CdnBaseUrl channelPath "/version.json"
+
+        this._Log("========== 国内源版本检查 ==========")
+        this._Log("URL: " jsonUrl)
+        this._Log("本地版本: " localVersion)
+
+        if (localVersion = "") {
+            return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "无法获取本地版本号"}
+        }
+
+        headersMap := Map(
+            "Accept", "application/json",
+            "User-Agent", "ArknightsFrameAssistant/" localVersion
+        )
+        this._LogRequest("DOMESTIC_CHECK_REQUEST", jsonUrl, "GET", headersMap)
+
+        try {
+            req := this._CreateHttpRequest(jsonUrl, "", "application/json")
+            if (req.error != "") {
+                this._Log("国内源HTTP请求创建失败: " req.error)
+                return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "网络错误: " req.error}
+            }
+
+            req.http.Send()
+            checkStart := A_TickCount
+            Loop {
+                Sleep(50)
+                if (req.http.readyState >= 4)
+                    break
+                if (A_TickCount - checkStart > this.TimeoutMs) {
+                    try req.http.Abort()
+                    this._Log("国内源版本检查超时")
+                    return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "请求超时，请检查网络连接"}
+                }
+            }
+
+            resp := this._GetResponseInfo(req.http)
+            this._LogResponse("DOMESTIC_CHECK_RESPONSE", resp.statusCode, resp.statusText, resp.headers, resp.body)
+
+            if (resp.statusCode != 200) {
+                this._Log("国内源返回非200状态码: " resp.statusCode)
+                return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "国内源返回错误: " resp.statusCode}
+            }
+
+            ; 解析 version.json
+            remoteVersion := this._ExtractJsonValue(resp.body, "version")
+            downloadUrl := this._ExtractJsonValue(resp.body, "downloadUrl")
+
+            this._Log("解析结果 - 远程版本: " remoteVersion)
+            this._Log("解析结果 - 下载地址: " downloadUrl)
+
+            if (remoteVersion = "" || downloadUrl = "") {
+                this._Log("无法解析国内源 version.json")
+                return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "无法解析版本信息"}
+            }
+
+            ; 解析 releases 数组用于 changelog 缓存
+            releases := this._ParseReleasesArray(resp.body)
+            if (releases.Length > 0) {
+                this._SaveChangelogCache(releases)
+            }
+            changelogBody := (releases.Length > 0) ? this._BuildChangelogBody(localVersion, releases) : ""
+
+            ; 保存到缓存
+            this._SaveToCache(remoteVersion, downloadUrl)
+
+            ; 比较版本
+            compareResult := this._CompareVersions(localVersion, remoteVersion)
+            this._Log("版本比较结果: " compareResult)
+
+            if (compareResult < 0) {
+                this._Log("国内源发现新版本: " remoteVersion)
+                return {status: "update_available", localVersion: localVersion, remoteVersion: remoteVersion, downloadUrl: downloadUrl, changelogBody: changelogBody}
+            } else {
+                this._Log("已是最新版本（国内源）")
+                return {status: "up_to_date", localVersion: localVersion, remoteVersion: remoteVersion, downloadUrl: ""}
+            }
+        } catch as err {
+            errorInfo := this._ParseErrorInfo(err)
+            this._Log("国内源检查异常: " errorInfo.desc)
+            return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "国内源检查失败: " errorInfo.desc}
+        }
+    }
+
+    ; 内部：用单个源检查更新（带重试，最多 3 次）
+    ; checkFn: 一个 Func 对象，签名为 (localVersion) → result
+    static _CheckSingleSource(checkFn, sourceName, localVersion) {
+        maxRetries := 3
+        lastResult := ""
+        Loop maxRetries {
+            this._Log(sourceName " 第 " A_Index "/" maxRetries " 次尝试...")
+            result := checkFn(localVersion)
+
+            if (result.status != "check_failed") {
+                return result
+            }
+
+            lastResult := result
+
+            if (A_Index < maxRetries) {
+                Sleep(1000)
+            }
+        }
+        ; 保留最后一次的真实错误信息，追加重试次数说明
+        lastResult.message .= "`n（已重试 " maxRetries " 次）"
+        return lastResult
+    }
+
+    ; 内部：尝试用首选源检查更新，每源重试 3 次，均失败后降级到备选源
+    static _TryCheckWithFallback(localVersion) {
+        updateSource := Config.GetImportant("UpdateSource")
+        isGitHubPreferred := (updateSource == "2")
+        preferredName := isGitHubPreferred ? "GitHub" : "国内源"
+        fallbackName := isGitHubPreferred ? "国内源" : "GitHub"
+        preferredFn := isGitHubPreferred ? ObjBindMethod(this, "_CheckFromGithub") : ObjBindMethod(this, "_CheckFromDomestic")
+        fallbackFn := isGitHubPreferred ? ObjBindMethod(this, "_CheckFromDomestic") : ObjBindMethod(this, "_CheckFromGithub")
+
+        this._Log("首选源: " preferredName)
+
+        ; 首选源（最多 3 次重试）
+        result := this._CheckSingleSource(preferredFn, preferredName, localVersion)
+
+        ; 成功或非网络类错误不降级
+        if (result.status != "check_failed") {
+            return result
+        }
+
+        this._Log(preferredName " 3 次均失败，降级到 " fallbackName)
+
+        ; 备选源（最多 3 次重试）
+        fallbackResult := this._CheckSingleSource(fallbackFn, fallbackName, localVersion)
+
+        if (fallbackResult.status = "check_failed") {
+            fallbackResult.message := "两个更新源均不可用，请检查网络连接"
+        }
+
+        return fallbackResult
     }
 
     ; 内部：获取全部 releases（正式版渠道额外请求，用于构建 changelog 缓存）

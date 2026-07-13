@@ -36,6 +36,7 @@ class Constants {
         "PauseSkill", "暂停技能",
         "PauseRetreat", "暂停撤退",
         "SwitchView", "视角切换",
+        "AutoBeginPauseSwitch", "开局自动暂停开关",
         ; 快捷操作
         "LButtonClick", "左键点击",
         "CeaseOperations", "放弃行动",
@@ -67,6 +68,7 @@ class Constants {
         "AutoUpdate", "自动检查更新",
         "LastDismissedVersion", "上次忽略的更新版本",
         "UpdateChannel", "更新渠道",
+        "UpdateSource", "更新源",
         "UseGitHubToken", "是否使用GitHub Token",
         "GitHubToken", "GitHub Token",
         "GamePath", "游戏路径",
@@ -111,6 +113,7 @@ class Config {
         "PauseSkill", "XButton2",
         "PauseRetreat", "XButton1",
         "SwitchView", "",
+        "AutoBeginPauseSwitch", "",
         ; 快捷操作
         "LButtonClick", "z",
         "CeaseOperations", "",
@@ -142,6 +145,7 @@ class Config {
         "AutoUpdate", "1",
         "LastDismissedVersion", "",
         "UpdateChannel", "1",
+        "UpdateSource", "1",
         "UseGitHubToken", "0",
         "GitHubToken", "",
         "GamePath", "",

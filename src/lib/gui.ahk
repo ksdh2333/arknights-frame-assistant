@@ -139,12 +139,12 @@ class GuiManager {
         this.MainGui.Add("GroupBox", "x0 y35 w" this.ColWidth " h0 Section vKeybindLeftGroup", "")
         this.KeybindControls.Push(this.MainGui["KeybindLeftGroup"])
 
-        this.KeybindControls.Push(AddBindRow("按下暂停", "PressPause")*)
-        this.KeybindControls.Push(AddBindRow("松开暂停", "ReleasePause")*)
+        this.KeybindControls.Push(AddBindRow("按下时暂停", "PressPause")*)
+        this.KeybindControls.Push(AddBindRow("松开时暂停", "ReleasePause")*)
         this.KeybindControls.Push(AddBindRow("切换倍速", "GameSpeed")*)
         this.KeybindControls.Push(AddBindRow("暂停时选中", "PauseSelect")*)
-        this.KeybindControls.Push(AddBindRow("单位技能", "Skill")*)
-        this.KeybindControls.Push(AddBindRow("单位撤退", "Retreat")*)
+        this.KeybindControls.Push(AddBindRow("技能", "Skill")*)
+        this.KeybindControls.Push(AddBindRow("撤退", "Retreat")*)
         this.KeybindControls.Push(AddBindRow("视角切换", "SwitchView")*)
         
         ; 常规作战 - 右列
@@ -183,7 +183,7 @@ class GuiManager {
 
         ; 游戏内帧率设置
         txtFrame := this.MainGui.Add("Text", "x45 y+20 w90 Right", "游戏内帧率")
-        this.GuiFrame := this.MainGui.Add("DropDownList", "x+20 y+-18 w120 vFrame", Constants.FrameOptions)
+        this.GuiFrame := this.MainGui.Add("DropDownList", "x+20 y+-18 w140 vFrame", Constants.FrameOptions)
         this.GuiFrame.OnEvent("Change", (*) => this.TrackChange("Frame"))
         frameText := Config.GetImportant("Frame")
         this.MainGui["Frame"].Value := this._FrameTextToIndex(frameText)
@@ -191,10 +191,12 @@ class GuiManager {
         this.NotOtherControls.Push(this.GuiFrame)
 
         ; 自动暂停开关
-        checkboxAutoBeginPause := this.MainGui.Add("Checkbox", "x+30 yp+2 vAutoBeginPause", " 开局自动暂停")
+        checkboxAutoBeginPause := this.MainGui.Add("Checkbox", "x+84 yp+2 vAutoBeginPause", " 切换开局自动暂停")
         checkboxAutoBeginPause.OnEvent("Click", (*) => this.TrackChange("AutoBeginPause"))
         this.MainGui["AutoBeginPause"].Value := Config.GetImportant("AutoBeginPause")
         this.NotOtherControls.Push(checkboxAutoBeginPause)
+        edit := this.MainGui.Add("Edit", "x+15 yp-4 w140 Center -TabStop Uppercase v" "AutoBeginPauseSwitch", Config.GetHotkey("AutoBeginPauseSwitch"))
+        this.NotOtherControls.Push(edit)
 
         ; 帧数设置提示语
         this.MainGui.SetFont("s9 c1994d2")
@@ -231,12 +233,12 @@ class GuiManager {
         ; 快捷操作提示语
         this.MainGui.SetFont("s9 c1994d2")
         hintQuick1 := this.MainGui.Add("Text", "x0 yp+40 w" this.GuiWidth " Center", "请确保游戏内的按键为默认设置，点击输入框修改按键，使用【BACKSPACE】清除按键")
-        hintQuick2 := this.MainGui.Add("Text", "x0 y+8 w" this.GuiWidth " Center", "“放弃行动/返回上级菜单”的功能完全一致，设置其中一个即可通用，也可设置两个不同的按键")
+        ; hintQuick2 := this.MainGui.Add("Text", "x0 y+8 w" this.GuiWidth " Center", "“放弃行动”为模拟按下 ESC 和 V 的功能；“返回上级菜单”为模拟左键点击返回按钮的功能，兼容肉鸽编队等 ESC 键不便捷的界面")
         this.MainGui.SetFont("s9 c1994d2 bold")
         hintQuick3 := this.MainGui.Add("Text", "x0 y+8 w" this.GuiWidth " Center", "为避免冲突，切换到此页面时“卫戍协议”按键将被禁用")
         this.MainGui.SetFont("s9 cDefault Norm")
         this.QuickControls.Push(hintQuick1)
-        this.QuickControls.Push(hintQuick2)
+        ; this.QuickControls.Push(hintQuick2)
         this.QuickControls.Push(hintQuick3)
 
         ; -- 卫戍协议 --
@@ -379,6 +381,16 @@ class GuiManager {
         this.UpdateControls.Push(txtUpdateChannel)
         this.UpdateControls.Push(dropdownUpdateChannel)
 
+        ; 更新源
+        txtUpdateSource := this.MainGui.Add("Text", "xs y+10", "更新源")
+        dropdownUpdateSource := this.MainGui.Add("DropDownList", "x+10 yp-2 w120 vUpdateSource AltSubmit", ["国内源", "GitHub"])
+        dropdownUpdateSource.OnEvent("Change", (*) => this.TrackChange("UpdateSource"))
+        ; 选择国内源时自动灰掉 GitHub Token 行
+        dropdownUpdateSource.OnEvent("Change", (*) => this._OnUpdateSourceChange())
+        dropdownUpdateSource.Value := Config.GetImportant("UpdateSource")
+        this.UpdateControls.Push(txtUpdateSource)
+        this.UpdateControls.Push(dropdownUpdateSource)
+
         ; 自动检查更新
         checkboxAutoUpdate := this.MainGui.Add("Checkbox", "xs y+10 h24 vAutoUpdate", " 自动检查更新")
         checkboxAutoUpdate.OnEvent("Click", (*) => this.TrackChange("AutoUpdate"))
@@ -401,10 +413,10 @@ class GuiManager {
         editGithubToken := this.MainGui.Add("Edit", "x+10 yp+2 w382 h20 vGitHubToken Password -Multi +0x1", Config.GetImportant("GitHubToken"))
         editGithubToken.OnEvent("Change", (*) => this.TrackChange("GitHubToken"))
         this.SetEditDisabled(editGithubToken, checkboxUseGitHubToken.Value)
-        hintGithubToken := this.MainGui.Add("Text", "xs y+6 c9c9c9c", "只要没有提示API配额超限，就不需要使用GitHub Token")
+        this.HintGithubToken := this.MainGui.Add("Text", "xs y+6 c9c9c9c", "只要没有提示API配额超限，就不需要使用GitHub Token")
         this.UpdateControls.Push(checkboxUseGitHubToken)
         this.UpdateControls.Push(editGithubToken)
-        this.UpdateControls.Push(hintGithubToken)
+        this.UpdateControls.Push(this.HintGithubToken)
 
         ; 分类"自定义"
         sepCustom := this.MainGui.Add("Text", "x160 y48 w530 h1 Backgroundd0d0d0 Center Section")
@@ -644,8 +656,18 @@ class GuiManager {
     static SetEditDisabled(ctrl, value) {
         if (value == 1)
             ctrl.Opt("-Disabled")
-        else 
+        else
             ctrl.Opt("+Disabled")
+    }
+
+    ; 更新源切换时联动 Token 行的启用/禁用
+    static _OnUpdateSourceChange() {
+        try {
+            isGitHub := (this.MainGui["UpdateSource"].Value == 2)  ; 2 = GitHub
+            this.MainGui["UseGitHubToken"].Enabled := isGitHub
+            this.MainGui["GitHubToken"].Enabled := isGitHub
+            this.HintGithubToken.Enabled := isGitHub
+        }
     }
 
     ; 将修改状态改为已修改
@@ -678,7 +700,7 @@ class GuiManager {
             }
         }
         ; Important 设置
-        for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
+        for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "UpdateSource", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
             try {
                 this._InitialValues[key] := this.MainGui[key].Value
             }
@@ -712,7 +734,7 @@ class GuiManager {
                         return
                 }
             }
-            for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
+            for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "UpdateSource", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
                 try {
                     if (this.MainGui[key].Value != this._InitialValues[key])
                         return
@@ -914,6 +936,10 @@ class GuiManager {
         info := this.OtherCategories[categoryName]
         for ctrl in info[1] {
             try ctrl.Visible := true
+        }
+        ; 切换到更新分类时，同步 Token 行状态
+        if (categoryName = "Update") {
+            this._OnUpdateSourceChange()
         }
         targetIndex := info[2]
 
