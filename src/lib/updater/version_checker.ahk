@@ -563,21 +563,43 @@ class VersionChecker {
 
     ; 内部：从国内源（COS+CDN）检查更新
     ; 返回格式与 _CheckFromGithub 一致
+    ; 如果所选渠道返回 404（version.json 不存在），自动尝试另一渠道再降级到 GitHub
     static _CheckFromDomestic(localVersion) {
         updateChannel := Config.GetImportant("UpdateChannel")
         isStable := (updateChannel == "1")
 
-        ; 拼接 version.json URL
-        channelPath := isStable ? "/stable" : "/beta"
-        jsonUrl := this.CdnBaseUrl channelPath "/version.json"
+        ; 首选渠道
+        primaryPath := isStable ? "/stable" : "/beta"
+        fallbackPath := isStable ? "/beta" : "/stable"
 
         this._Log("========== 国内源版本检查 ==========")
-        this._Log("URL: " jsonUrl)
+        this._Log("首选渠道: " primaryPath)
         this._Log("本地版本: " localVersion)
 
         if (localVersion = "") {
             return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "无法获取本地版本号"}
         }
+
+        ; 尝试首选渠道
+        result := this._CheckDomesticChannel(localVersion, primaryPath)
+
+        ; 首选成功或非 404 错误 → 直接返回（404 才尝试备选渠道）
+        if (result.status != "check_failed" || !InStr(result.message, "404")) {
+            return result
+        }
+
+        this._Log("国内源 " primaryPath " 返回 404，尝试备选渠道 " fallbackPath)
+
+        ; 尝试备选渠道
+        fallbackResult := this._CheckDomesticChannel(localVersion, fallbackPath)
+        return fallbackResult
+    }
+
+    ; 内部：从国内源指定渠道拉取 version.json 并解析
+    static _CheckDomesticChannel(localVersion, channelPath) {
+        jsonUrl := this.CdnBaseUrl channelPath "/version.json"
+
+        this._Log("URL: " jsonUrl)
 
         headersMap := Map(
             "Accept", "application/json",
