@@ -3,6 +3,19 @@ name: Sync Release to COS
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '版本号 (如 v1.5.6)'
+        required: true
+      prerelease:
+        description: '是否测试版'
+        type: boolean
+        default: false
+      body:
+        description: '更新日志 (可选)'
+        required: false
+        default: '# 手动测试'
 
 jobs:
   sync-to-cos:
@@ -12,9 +25,16 @@ jobs:
 
       - name: Parse release info
         id: release
+        env:
+          IS_MANUAL: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          echo "prerelease=${{ github.event.release.prerelease }}" >> $GITHUB_OUTPUT
+          if [ "$IS_MANUAL" = "true" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+            echo "prerelease=${{ github.event.inputs.prerelease }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            echo "prerelease=${{ github.event.release.prerelease }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set channel
         id: channel
@@ -53,15 +73,23 @@ jobs:
           COS_BUCKET: ${{ secrets.COS_BUCKET }}
           COS_REGION: ${{ secrets.COS_REGION }}
           CDN_DOMAIN: ${{ secrets.CDN_DOMAIN }}
+          IS_MANUAL: ${{ github.event_name == 'workflow_dispatch' }}
           RELEASE_BODY: ${{ github.event.release.body }}
           RELEASE_DATE: ${{ github.event.release.published_at }}
+          INPUT_BODY: ${{ github.event.inputs.body }}
         run: |
-          printf '%s' "$RELEASE_BODY" > /tmp/release_body.txt
+          if [ "$IS_MANUAL" = "true" ]; then
+            printf '%s' "$INPUT_BODY" > /tmp/release_body.txt
+            RELEASE_DATE_INPUT=$(date +%Y-%m-%d)
+          else
+            printf '%s' "$RELEASE_BODY" > /tmp/release_body.txt
+            RELEASE_DATE_INPUT="$RELEASE_DATE"
+          fi
           pip install cos-python-sdk-v5
           python .github/scripts/build_version_json.py \
             --channel ${{ steps.channel.outputs.name }} \
             --version ${{ steps.release.outputs.tag }} \
-            --date "$(date -d "$RELEASE_DATE" +%Y-%m-%d)" \
+            --date "$(date -d "$RELEASE_DATE_INPUT" +%Y-%m-%d)" \
             --body-file /tmp/release_body.txt \
             --domain "${{ secrets.CDN_DOMAIN }}"
 
