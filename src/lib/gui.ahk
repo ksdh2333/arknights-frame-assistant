@@ -381,6 +381,16 @@ class GuiManager {
         this.UpdateControls.Push(txtUpdateChannel)
         this.UpdateControls.Push(dropdownUpdateChannel)
 
+        ; 更新源
+        txtUpdateSource := this.MainGui.Add("Text", "xs y+10", "更新源")
+        dropdownUpdateSource := this.MainGui.Add("DropDownList", "x+10 yp-2 w120 vUpdateSource AltSubmit", ["国内源", "GitHub"])
+        dropdownUpdateSource.OnEvent("Change", (*) => this.TrackChange("UpdateSource"))
+        ; 选择国内源时自动灰掉 GitHub Token 行
+        dropdownUpdateSource.OnEvent("Change", (*) => this._OnUpdateSourceChange())
+        dropdownUpdateSource.Value := Config.GetImportant("UpdateSource")
+        this.UpdateControls.Push(txtUpdateSource)
+        this.UpdateControls.Push(dropdownUpdateSource)
+
         ; 自动检查更新
         checkboxAutoUpdate := this.MainGui.Add("Checkbox", "xs y+10 h24 vAutoUpdate", " 自动检查更新")
         checkboxAutoUpdate.OnEvent("Click", (*) => this.TrackChange("AutoUpdate"))
@@ -403,10 +413,10 @@ class GuiManager {
         editGithubToken := this.MainGui.Add("Edit", "x+10 yp+2 w382 h20 vGitHubToken Password -Multi +0x1", Config.GetImportant("GitHubToken"))
         editGithubToken.OnEvent("Change", (*) => this.TrackChange("GitHubToken"))
         this.SetEditDisabled(editGithubToken, checkboxUseGitHubToken.Value)
-        hintGithubToken := this.MainGui.Add("Text", "xs y+6 c9c9c9c", "只要没有提示API配额超限，就不需要使用GitHub Token")
+        this.HintGithubToken := this.MainGui.Add("Text", "xs y+6 c9c9c9c", "只要没有提示API配额超限，就不需要使用GitHub Token")
         this.UpdateControls.Push(checkboxUseGitHubToken)
         this.UpdateControls.Push(editGithubToken)
-        this.UpdateControls.Push(hintGithubToken)
+        this.UpdateControls.Push(this.HintGithubToken)
 
         ; 分类"自定义"
         sepCustom := this.MainGui.Add("Text", "x160 y48 w530 h1 Backgroundd0d0d0 Center Section")
@@ -646,8 +656,18 @@ class GuiManager {
     static SetEditDisabled(ctrl, value) {
         if (value == 1)
             ctrl.Opt("-Disabled")
-        else 
+        else
             ctrl.Opt("+Disabled")
+    }
+
+    ; 更新源切换时联动 Token 行的启用/禁用
+    static _OnUpdateSourceChange() {
+        try {
+            isGitHub := (this.MainGui["UpdateSource"].Value == 2)  ; 2 = GitHub
+            this.MainGui["UseGitHubToken"].Enabled := isGitHub
+            this.MainGui["GitHubToken"].Enabled := isGitHub
+            this.HintGithubToken.Enabled := isGitHub
+        }
     }
 
     ; 将修改状态改为已修改
@@ -680,7 +700,7 @@ class GuiManager {
             }
         }
         ; Important 设置
-        for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
+        for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "UpdateSource", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
             try {
                 this._InitialValues[key] := this.MainGui[key].Value
             }
@@ -714,7 +734,7 @@ class GuiManager {
                         return
                 }
             }
-            for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
+            for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "UpdateSource", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
                 try {
                     if (this.MainGui[key].Value != this._InitialValues[key])
                         return
@@ -916,6 +936,10 @@ class GuiManager {
         info := this.OtherCategories[categoryName]
         for ctrl in info[1] {
             try ctrl.Visible := true
+        }
+        ; 切换到更新分类时，同步 Token 行状态
+        if (categoryName = "Update") {
+            this._OnUpdateSourceChange()
         }
         targetIndex := info[2]
 
