@@ -9,6 +9,7 @@
 import argparse
 import json
 import os
+import sys
 import tempfile
 
 from qcloud_cos import CosConfig, CosS3Client
@@ -46,6 +47,7 @@ def get_cos_client():
 def download_existing_releases(cos_client, bucket, channel):
     """Download existing releases array from COS. Returns empty list on failure."""
     key = f"{channel}/version.json"
+    tmp_path = None
     try:
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             tmp_path = f.name
@@ -56,27 +58,40 @@ def download_existing_releases(cos_client, bucket, channel):
         )
         with open(tmp_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        os.unlink(tmp_path)
         return data.get("releases", [])
-    except Exception:
+    except Exception as e:
+        print(f"Warning: Failed to download existing releases from {key}: {e}", file=sys.stderr)
         return []
+    finally:
+        if tmp_path is not None:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
 
 
 def upload_version_json(cos_client, bucket, channel, data):
     """Upload version.json to COS."""
     key = f"{channel}/version.json"
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", encoding="utf-8", delete=False
-    ) as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-        tmp_path = f.name
-    cos_client.upload_file(
-        Bucket=bucket,
-        Key=key,
-        LocalFilePath=tmp_path,
-    )
-    os.unlink(tmp_path)
-    print(f"Uploaded {key}")
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", encoding="utf-8", delete=False
+        ) as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+            tmp_path = f.name
+        cos_client.upload_file(
+            Bucket=bucket,
+            Key=key,
+            LocalFilePath=tmp_path,
+        )
+        print(f"Uploaded {key}")
+    finally:
+        if tmp_path is not None:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
 
 
 def main():
