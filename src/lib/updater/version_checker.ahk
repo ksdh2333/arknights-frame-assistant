@@ -563,36 +563,55 @@ class VersionChecker {
 
     ; 内部：从国内源（COS+CDN）检查更新
     ; 返回格式与 _CheckFromGithub 一致
-    ; 如果所选渠道返回 404（version.json 不存在），自动尝试另一渠道再降级到 GitHub
+    ; 正式版：仅查 /stable；测试版：查 /beta + /stable 取最高版本（与 GitHub 行为对齐）
     static _CheckFromDomestic(localVersion) {
         updateChannel := Config.GetImportant("UpdateChannel")
         isStable := (updateChannel == "1")
 
-        ; 首选渠道
-        primaryPath := isStable ? "/stable" : "/beta"
-        fallbackPath := isStable ? "/beta" : "/stable"
-
         this._Log("========== 国内源版本检查 ==========")
-        this._Log("首选渠道: " primaryPath)
+        this._Log("更新渠道: " (isStable ? "正式版" : "测试版"))
         this._Log("本地版本: " localVersion)
 
         if (localVersion = "") {
             return {status: "check_failed", localVersion: localVersion, remoteVersion: "", downloadUrl: "", message: "无法获取本地版本号"}
         }
 
-        ; 尝试首选渠道
-        result := this._CheckDomesticChannel(localVersion, primaryPath)
-
-        ; 首选成功或非 404 错误 → 直接返回（404 才尝试备选渠道）
-        if (result.status != "check_failed" || !InStr(result.message, "404")) {
-            return result
+        ; 正式版：只查 stable
+        if (isStable) {
+            return this._CheckDomesticChannel(localVersion, "/stable")
         }
 
-        this._Log("国内源 " primaryPath " 返回 404，尝试备选渠道 " fallbackPath)
+        ; 测试版：查 beta 和 stable，取版本号更高者
+        betaResult := this._CheckDomesticChannel(localVersion, "/beta")
+        stableResult := this._CheckDomesticChannel(localVersion, "/stable")
 
-        ; 尝试备选渠道
-        fallbackResult := this._CheckDomesticChannel(localVersion, fallbackPath)
-        return fallbackResult
+        ; 两个都失败
+        betaFailed := (betaResult.status = "check_failed")
+        stableFailed := (stableResult.status = "check_failed")
+
+        if (betaFailed && stableFailed) {
+            ; 返回最后一次的错误（优先保留 beta 的错误信息）
+            return betaResult
+        }
+
+        ; 仅 beta 成功
+        if (stableFailed) {
+            return betaResult
+        }
+
+        ; 仅 stable 成功
+        if (betaFailed) {
+            return stableResult
+        }
+
+        ; 两个都成功 → 取版本号更高者
+        if (this._CompareVersions(betaResult.remoteVersion, stableResult.remoteVersion) >= 0) {
+            this._Log("测试版渠道: beta=" betaResult.remoteVersion " >= stable=" stableResult.remoteVersion "，使用 beta")
+            return betaResult
+        } else {
+            this._Log("测试版渠道: stable=" stableResult.remoteVersion " > beta=" betaResult.remoteVersion "，使用 stable")
+            return stableResult
+        }
     }
 
     ; 内部：从国内源指定渠道拉取 version.json 并解析
