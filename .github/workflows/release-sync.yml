@@ -46,6 +46,7 @@ jobs:
           fi
 
       - name: Download release asset
+        if: github.event_name != 'workflow_dispatch'
         run: |
           ASSET_URL=$(echo '${{ toJson(github.event.release.assets) }}' | jq -r '.[] | select(.name == "AFA.exe") | .browser_download_url')
           if [ -z "$ASSET_URL" ]; then
@@ -63,6 +64,7 @@ jobs:
                          -r ${{ secrets.COS_REGION }}
 
       - name: Upload AFA.exe to COS
+        if: github.event_name != 'workflow_dispatch'
         run: |
           coscmd upload AFA.exe /${{ steps.channel.outputs.name }}/${{ steps.release.outputs.tag }}/AFA.exe
 
