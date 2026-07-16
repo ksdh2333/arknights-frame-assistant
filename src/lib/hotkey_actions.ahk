@@ -353,7 +353,7 @@ ActionSkip(ThisHotkey) {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
     }
-    Pos := PauseButtonPosition()
+    Pos := SkipButtonPosition()
     MouseGetPos &xpos, &ypos
     BlockInput "MouseMove"
     MouseMove Pos.PBX, Pos.PBY
@@ -715,6 +715,13 @@ CollectButtonPosition() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
     PButtonX := ww * 0.1104
     PButtonY := wh * 0.7250
+    return {PBX: PButtonX, PBY: PButtonY}
+}
+; 获取跳过按钮位置
+SkipButtonPosition() {
+    WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
+    PButtonX := ww * 0.959765
+    PButtonY := wh * 0.091666
     return {PBX: PButtonX, PBY: PButtonY}
 }
 
