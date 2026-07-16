@@ -63,7 +63,7 @@ class KeyBinder {
         ; 若有输入按键且不是鼠标左键
         if(Newkey != "") {
             pureNewkey := RegExReplace(Newkey, "^[~*$!^+#&<>()]+")
-            if(pureNewkey == "Backspace") {
+            if(pureNewkey == "Backspace" || pureNewkey == "Delete") {
                 KeyBinder.ControlObj.Value := ""
                 if(KeyBinder.ControlObj.Name == "SwitchHotkey")
                     Config.SetCustom(KeyBinder.ControlObj.Name, "")
