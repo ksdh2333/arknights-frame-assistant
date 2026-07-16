@@ -2,9 +2,6 @@
 ; -- 常规作战 --
 ; 按下暂停
 ActionPressPause(ThisHotkey) {
-    if !IsInLevel() {
-        return
-    }
     Send "{ESC Down}"
     USleep(50)
     Send "{ESC Up}"
@@ -31,9 +28,6 @@ ActionGameSpeed(ThisHotkey) {
 }
 ; 前进16ms
 Action16ms(ThisHotkey) {
-    if !IsInLevel() {
-        return
-    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -55,9 +49,6 @@ Action16ms(ThisHotkey) {
 }
 ; 前进33ms，由于波动，过帧间隔设置为30ms，避免一次过两帧
 Action33ms(ThisHotkey) {
-    if !IsInLevel() {
-        return
-    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -79,9 +70,6 @@ Action33ms(ThisHotkey) {
 }
 ; 前进166ms
 Action166ms(ThisHotkey) {
-    if !IsInLevel() {
-        return
-    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -103,9 +91,6 @@ Action166ms(ThisHotkey) {
 }
 ; 暂停选中
 ActionPauseSelect(ThisHotkey) {
-    if !IsInLevel() {
-        return
-    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -147,9 +132,6 @@ ActionRetreat(ThisHotkey) {
 }
 ; 一键技能
 ActionOneClickSkill(ThisHotkey) {
-    if !IsInLevel() {
-        return
-    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -170,9 +152,6 @@ ActionOneClickSkill(ThisHotkey) {
 }
 ; 一键撤退
 ActionOneClickRetreat(ThisHotkey) {
-    if !IsInLevel() {
-        return
-    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -193,9 +172,6 @@ ActionOneClickRetreat(ThisHotkey) {
 }
 ; 暂停技能
 ActionPauseSkill(ThisHotkey) {
-    if !IsInLevel() {
-        return
-    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -223,9 +199,6 @@ ActionPauseSkill(ThisHotkey) {
 }
 ; 暂停撤退
 ActionPauseRetreat(ThisHotkey) {
-    if !IsInLevel() {
-        return
-    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -254,9 +227,6 @@ ActionPauseRetreat(ThisHotkey) {
 
 ; 视角切换
 ActionSwitchView(ThisHotkey) {
-    if !IsInLevel() {
-        return
-    }
     try oldCtx := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
     if !IsMouseInClient() {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
@@ -320,18 +290,6 @@ ActionBeginPause() {
             ; 为了降低暂停延迟，后置代理指挥识别，识别到是代理指挥时取消暂停
             isProxy := false
             TobC := TakeOverButtonPositions()
-            ; 第一层：线点识别（精确，优先）
-            ; pointInfo := [] ; 调试代码
-            ; for point in TobC.LinePoints {
-            ;     if !PixelSearch(&FoundX, &FoundY, point.LX, point.Y, point.RX, point.Y, point.C, 20)
-            ;     {
-            ;         isProxy := false
-            ;         ; ToolTip("线点检测不通过：" . point.LX . " " . point.Y . "→" . point.RX . " " . point.Y . " " . Format("{1:X}", point.C) . " " . "实际识别到的：" . PixelGetColor(point.LX, point.Y))
-            ;         break
-            ;     }
-            ;     ; color := PixelGetColor(point.x, point.y)
-            ;     ; pointInfo.Push(Format("({:.0f},{:.0f})={:#x}", point.x, point.y, color)) ; 调试代码
-            ; }
             ; 接管代理按钮右侧边缘
             if ImageSearch(&OutputVarX, &OutputVarY, TobC.ImageRegion.RLX, TobC.ImageRegion.RUY, TobC.ImageRegion.RRX, TobC.ImageRegion.RDY, "*90 " FileExtractor.TakeOver1Path) or ImageSearch(&OutputVarX, &OutputVarY, TobC.ImageRegion.RLX, TobC.ImageRegion.RUY, TobC.ImageRegion.RRX, TobC.ImageRegion.RDY, "*90 " FileExtractor.TakeOver2Path) { ; 0 帧暂停接管按钮半透明导致至少需要 90 容错
                 isProxy := true
@@ -395,7 +353,7 @@ ActionSkip(ThisHotkey) {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
     }
-    Pos := PauseButtonPosition()
+    Pos := SkipButtonPosition()
     MouseGetPos &xpos, &ypos
     BlockInput "MouseMove"
     MouseMove Pos.PBX, Pos.PBY
@@ -731,13 +689,6 @@ SpeedButtonPositionColor() {
     PButtonCDY := wh * 0.0870
     return {PBCLX: PButtonCLX, PBCRX: PButtonCRX, PBCUY: PButtonCUY, PBCDY: PButtonCDY}
 }
-/* ; 获取返回按钮识别位置
-BackButtonPosition() {
-    WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-    PButtonLX := ww * 0.0260, PButtonRX := ww * 0.0552
-    PButtonUY := wh * 0.0462, PButtonDY := wh * 0.0574
-    return {PBLX: PButtonLX, PBUY: PButtonUY, PBRX: PButtonRX, PBDY: PButtonDY}
-} */
 ; 获取基建收取按钮位置
 HarvestButtonPosition() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
@@ -748,28 +699,6 @@ HarvestButtonPosition() {
 ; 获取代理接管作战按钮识别位置（线点识别 + 图像识别）
 TakeOverButtonPositions() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
-
-    ; ; === 线点识别坐标 ===
-    ; X1 := ww * 0.332031, X2 := ww * 0.336914, X3 := ww * 0.342285
-    ; X4 := ww * 0.347167, X5 := ww * 0.352539, X6 := ww * 0.357421
-    ; X7 := ww * 0.362792, X8 := ww * 0.367675, X9 := ww * 0.373046
-
-    ; UY  := wh * 0.887962  ; 上方 y
-    ; MY  := wh * 0.914814  ; 中线 y
-    ; DY  := wh * 0.939814  ; 下方 y
-
-    ; MColor := 0x333333  ; 中线识别颜色
-    ; BColor := 0x323232  ; 按钮背景颜色
-
-    ; LinePoints := [
-    ;     ; 线识别
-    ;     {LX : X2, RX : X8, Y: MY, C: MColor},
-    ;     ; 点识别
-    ;     {LX : X1, RX : X1, Y: DY, C: BColor}, {LX : X2, RX : X2, Y: DY, C: BColor}, {LX : X3, RX : X3, Y: DY, C: BColor},
-    ;     {LX : X4, RX : X4, Y: DY, C: BColor}, {LX : X5, RX : X5, Y: DY, C: BColor}, {LX : X6, RX : X6, Y: DY, C: BColor},
-    ;     {LX : X7, RX : X7, Y: DY, C: BColor}, {LX : X8, RX : X8, Y: DY, C: BColor}, {LX : X9, RX : X9, Y: DY, C: BColor}
-    ; ]
-
     ; === ImageSearch 搜索区域 ===
     ImageRegion := {
         ; 按钮右侧边缘
@@ -779,8 +708,6 @@ TakeOverButtonPositions() {
         HLX : ww * 0.2583, HRX : ww * 0.3354,
         HUY : wh * 0.9037, HDY : wh * 0.9620
     }
-
-    ; return {LinePoints: LinePoints, ImageRegion: ImageRegion}
     return {ImageRegion: ImageRegion}
 }
 ; 获取“收下”按钮位置
@@ -788,6 +715,13 @@ CollectButtonPosition() {
     WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
     PButtonX := ww * 0.1104
     PButtonY := wh * 0.7250
+    return {PBX: PButtonX, PBY: PButtonY}
+}
+; 获取跳过按钮位置
+SkipButtonPosition() {
+    WinGetClientPos ,, &ww, &wh, "ahk_exe Arknights.exe"
+    PButtonX := ww * 0.959765
+    PButtonY := wh * 0.091666
     return {PBX: PButtonX, PBY: PButtonY}
 }
 

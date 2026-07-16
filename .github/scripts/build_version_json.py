@@ -7,10 +7,15 @@ same changelog data as the GitHub source.
 
 Falls back to downloading the existing version.json from COS when the releases
 file is unavailable.
+
+When --sync-both is set, both stable/version.json and beta/version.json are
+updated with the same full releases array, ensuring changelog consistency
+regardless of which channel the user selects in AFA.
 """
 import argparse
 import json
 import os
+import re
 import sys
 import tempfile
 
@@ -148,6 +153,53 @@ def upload_version_json(cos_client, bucket, channel, data):
                 pass
 
 
+def _version_key(tag):
+    """Convert a version tag (e.g. 'v1.5.7' or 'v1.5.7-beta1') into a
+    sortable tuple so that max() returns the semantically highest version.
+
+    Follows SemVer 2.0 precedence: a stable release sorts HIGHER than any
+    prerelease of the same major.minor.patch (1.5.7 > 1.5.7-beta1).
+    """
+    v = re.sub(r"^[vV]", "", tag)
+
+    # Split core version from optional prerelease suffix
+    if "-" in v:
+        core, pre = v.split("-", 1)
+        pre_parts = re.split(r"[.]", pre)
+        pre_key = []
+        for p in pre_parts:
+            try:
+                pre_key.append((0, int(p)))
+            except ValueError:
+                pre_key.append((1, p))
+        is_stable = 0  # prerelease → lower priority
+        pre_tuple = tuple(pre_key)
+    else:
+        core = v
+        is_stable = 1  # stable → higher priority
+        pre_tuple = ()
+
+    core_parts = [int(x) for x in core.split(".")]
+    while len(core_parts) < 3:
+        core_parts.append(0)
+
+    # (core, is_stable, prerelease) — is_stable=1 beats is_stable=0
+    return (tuple(core_parts), is_stable, pre_tuple)
+
+
+def _find_latest_for_channel(releases, channel):
+    """Return the latest release dict for *channel* ('stable' or 'beta').
+
+    *releases* is a list of dicts as returned by :func:`load_github_releases`.
+    Returns ``None`` when no release matches the channel.
+    """
+    want_prerelease = channel == "beta"
+    candidates = [r for r in releases if r.get("prerelease", False) == want_prerelease]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda r: _version_key(r.get("tag_name", "")))
+
+
 def load_github_releases(filepath):
     """Load releases from a JSONL file produced by `gh api --paginate --jq`.
 
@@ -171,6 +223,33 @@ def load_github_releases(filepath):
     return releases
 
 
+def _upload_for_channel(cos_client, bucket, channel, version, date, body, domain,
+                        github_releases, is_current):
+    """Build and upload version.json for a single channel.
+
+    When *is_current* is True this is the release being published right now;
+    its version/date/body is used as the authoritative top-level data.  When
+    False it is the *other* channel being synced — its top-level data comes
+    from the latest matching release found in *github_releases*.
+    """
+    data = build_version_json(
+        channel, version, date, body, domain, github_releases
+    )
+
+    if github_releases:
+        upload_version_json(cos_client, bucket, channel, data)
+    else:
+        # Fallback: merge with existing releases on COS
+        existing_releases = download_existing_releases(cos_client, bucket, channel)
+        existing_versions = {r["tag_name"] for r in existing_releases}
+        if version not in existing_versions:
+            data["releases"].extend(existing_releases)
+        upload_version_json(cos_client, bucket, channel, data)
+
+    tag = " (current)" if is_current else " (synced)"
+    print(f"version.json updated: {version} ({channel}){tag}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Build and upload version.json")
     parser.add_argument("--channel", required=True, choices=["stable", "beta"])
@@ -192,6 +271,11 @@ def main():
         default=None,
         help="Path to JSONL file of all GitHub releases (from gh api --paginate --jq)",
     )
+    parser.add_argument(
+        "--sync-both",
+        action="store_true",
+        help="Also update the other channel's version.json with the same full releases array",
+    )
     args = parser.parse_args()
 
     # Read body from file if --body-file is provided, otherwise use --body directly
@@ -206,25 +290,39 @@ def main():
     if github_releases:
         print(f"Loaded {len(github_releases)} releases from {args.releases_file}")
 
-    data = build_version_json(
-        args.channel, args.version, args.date, body, args.domain, github_releases
-    )
-
     cos_client = get_cos_client()
     bucket = os.environ["COS_BUCKET"]
 
-    if github_releases:
-        # We already have full history from GitHub — upload directly
-        upload_version_json(cos_client, bucket, args.channel, data)
-    else:
-        # Fallback: merge with existing releases on COS
-        existing_releases = download_existing_releases(cos_client, bucket, args.channel)
-        existing_versions = {r["tag_name"] for r in existing_releases}
-        if args.version not in existing_versions:
-            data["releases"].extend(existing_releases)
-        upload_version_json(cos_client, bucket, args.channel, data)
+    # Always upload for the current (triggering) channel first
+    _upload_for_channel(
+        cos_client, bucket, args.channel, args.version, args.date, body,
+        args.domain, github_releases, is_current=True,
+    )
 
-    print(f"version.json updated: {args.version} ({args.channel})")
+    # Optionally sync the other channel so both version.json files carry the
+    # same full releases array — this keeps changelogs consistent regardless
+    # of which channel the user selects in AFA.
+    if args.sync_both:
+        other_channel = "beta" if args.channel == "stable" else "stable"
+        other_latest = _find_latest_for_channel(github_releases, other_channel)
+
+        if other_latest is not None:
+            other_version = other_latest.get("tag_name", "")
+            other_date = (other_latest.get("published_at", "") or "")[:10]
+            other_body = other_latest.get("body", "")
+            if other_version:
+                _upload_for_channel(
+                    cos_client, bucket, other_channel, other_version,
+                    other_date, other_body, args.domain, github_releases,
+                    is_current=False,
+                )
+            else:
+                print(f"Skipping {other_channel}: latest release has no tag_name")
+        else:
+            print(
+                f"Skipping {other_channel}: no releases found for that channel "
+                f"in GitHub API data"
+            )
 
 
 if __name__ == "__main__":
