@@ -14,15 +14,27 @@ CoordMode "Mouse", "Client"
 DllCall("winmm\timeBeginPeriod", "UInt", 1)
 OnExit (*) => DllCall("winmm\timeEndPeriod", "UInt", 1)
 
+; 判断是否由游戏启动事件触发
+HasLaunchArgument(argument) {
+    for arg in A_Args {
+        if (StrLower(arg) = StrLower(argument))
+            return true
+    }
+    return false
+}
+
+startedByGameAutoStart := HasLaunchArgument("--game-autostart")
+
 ; 获取权限
 if not A_IsAdmin
 {
     try
     {
+        launchContextArgs := startedByGameAutoStart ? " --game-autostart" : ""
         if A_IsCompiled
-            Run '*RunAs "' A_ScriptFullPath '" /restart'
+            Run '*RunAs "' A_ScriptFullPath '" /restart' launchContextArgs
         else
-            Run '*RunAs "' A_AhkPath '" /restart "' A_ScriptFullPath '"'
+            Run '*RunAs "' A_AhkPath '" /restart "' A_ScriptFullPath '"' launchContextArgs
     }
     ExitApp
 }
@@ -34,6 +46,9 @@ if not A_IsAdmin
 
 ; 包含配置管理
 #Include ./lib/config.ahk
+
+; 包含随游戏自动启动模块
+#Include ./lib/game_auto_start.ahk
 
 ; 包含事件总线
 #Include ./lib/eventbus.ahk
@@ -64,6 +79,19 @@ if not A_IsAdmin
 
 ; 加载设置
 Loader.LoadSettings()
+
+; 写入启动来源状态，并校准随游戏自动启动的 Windows 审核和计划任务
+State.StartedByGameAutoStart := startedByGameAutoStart
+autoStartResult := GameAutoStartManager.Reconcile()
+if (!autoStartResult.success) {
+    OutputDebug("[GameAutoStart] 启动时校准失败：" autoStartResult.message)
+    if (!State.StartedByGameAutoStart && Config.GetImportant("AutoStartWithGame") = "1")
+        MessageBox.Warning(autoStartResult.message, "随游戏自动启动校准失败")
+}
+
+; 关闭功能后若有遗留事件触发，只清理任务，不启动小助手主体
+if (State.StartedByGameAutoStart && Config.GetImportant("AutoStartWithGame") != "1")
+    ExitApp
 
 ; 确保嵌入文件已提取到 AppData
 FileExtractor.EnsureExtracted()

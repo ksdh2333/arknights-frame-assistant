@@ -73,6 +73,7 @@ class Constants {
         "GitHubToken", "GitHub Token",
         "GamePath", "游戏路径",
         "AutoRunGame", "随小助手自动启动明日方舟",
+        "AutoStartWithGame", "随明日方舟自动启动小助手",
         "DismissedChangelogVersion", "已忽略公告版本",
         "DefaultStrongHoldProtocol", "默认启动卫戍协议方案",
         "AutoBeginPause", "开局自动暂停"
@@ -150,6 +151,7 @@ class Config {
         "GitHubToken", "",
         "GamePath", "",
         "AutoRunGame", "0",
+        "AutoStartWithGame", "0",
         "LastLaunchedVersion", "",
         "DismissedChangelogVersion", "",
         "DefaultStrongHoldProtocol", "0",
@@ -472,6 +474,9 @@ class Config {
 class State {
     ; 游戏状态
     static GameHasStarted := false
+
+    ; 是否由游戏进程创建事件触发启动
+    static StartedByGameAutoStart := false
     
     ; 当前延迟值
     static CurrentDelay := 11.3  ; 默认120帧
