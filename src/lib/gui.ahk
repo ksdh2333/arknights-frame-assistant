@@ -97,7 +97,7 @@ class GuiManager {
         A_TrayMenu.Default := "打开设置界面"
 
         ; 根据设置决定是否自动显示
-        if (!State.StartedByGameAutoStart && Config.GetImportant("AutoOpenSettings") == "1") {
+        if (Config.GetImportant("AutoOpenSettings") == "1") {
             this.Show()
         }
     }

@@ -104,8 +104,7 @@ HotkeyController.HotkeyOn()
 #Include ./lib/changelog/changelog_checker.ahk
 
 ; 检查并显示更新公告
-if (!State.StartedByGameAutoStart)
-    ChangelogChecker.CheckAndShow()
+ChangelogChecker.CheckAndShow()
 
 ; 包含GUI
 #Include ./lib/gui.ahk

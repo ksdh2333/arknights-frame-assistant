@@ -27,10 +27,6 @@ class Updater {
 
     ; 启动时检查（异步）
     static CheckOnStartup() {
-        ; 游戏触发的静默启动不显示更新提示，手动启动时再检查
-        if (State.StartedByGameAutoStart)
-            return
-
         ; 延迟执行，避免阻塞GUI初始化
         SetTimer(() => this._DoCheck(false), -this.StartupDelay)
     }
