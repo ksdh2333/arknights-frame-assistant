@@ -44,6 +44,9 @@ if not A_IsAdmin
 ; 包含统一消息框
 #Include ./lib/message_box.ahk
 
+; 包含 GitHub Token 保护模块
+#Include ./lib/token_protector.ahk
+
 ; 包含配置管理
 #Include ./lib/config.ahk
 
@@ -109,6 +112,10 @@ ChangelogChecker.CheckAndShow()
 ; 包含GUI
 #Include ./lib/gui.ahk
 #Include ./lib/updater/updater_ui.ahk
+
+tokenStorageWarning := Config.GetTokenStorageWarning()
+if (tokenStorageWarning != "")
+    MessageBox.Warning(tokenStorageWarning, "GitHub Token 存储提示")
 
 ; 触发应用启动事件（触发自动更新检查和游戏自动启动）
 EventBus.Publish("AppStarted")
