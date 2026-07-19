@@ -55,6 +55,8 @@ class GuiManager {
     static LastActiveTab := "keyBind"  ; 最后选中的功能性标签页（排除"其他设置"）
     static FrameSkipLabels := Map()     ; 过帧标签控件（用于动态更新文本）
     static FrameSkipDelayKeys := ["FrameSkip16msDelay", "FrameSkip33msDelay", "FrameSkip166msDelay"]
+    ; 具有对应 GUI 控件的 Important 设置；不直接遍历 Config.AllImportant，后者还包含内部字段
+    static GuiImportantKeys := ["Frame", "AutoExit", "AutoOpenSettings", "ExitOnWindowClose", "DefaultStrongHoldProtocol", "AutoRunGame", "AutoStartWithGame", "GamePath", "UpdateChannel", "UpdateSource", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"]
     
     ; 初始化GUI（单例模式）
     static Init() {
@@ -72,7 +74,7 @@ class GuiManager {
         this.MainGui.SetFont("s9", "Microsoft YaHei UI")
         hWnd := this.MainGui.Hwnd
         try DllCall("dwmapi\DwmSetWindowAttribute", "ptr", hWnd, "int", 38, "int*", true, "int", 4)
-        this.MainGui.OnEvent("Close", (*) => EventBus.Publish("SettingsCancel"))
+        this.MainGui.OnEvent("Close", (*) => this._HandleWindowClose())
         
         ; 创建控件
         this._CreateControls()
@@ -100,6 +102,15 @@ class GuiManager {
         if (Config.GetImportant("AutoOpenSettings") == "1") {
             this.Show()
         }
+    }
+
+    ; 处理设置窗口标题栏关闭按钮和 Alt+F4
+    static _HandleWindowClose(*) {
+        if (Config.GetImportant("ExitOnWindowClose") == "1") {
+            ExitApp()
+            return
+        }
+        EventBus.Publish("SettingsCancel")
     }
     
     ; 内部：创建所有控件
@@ -340,6 +351,12 @@ class GuiManager {
         checkboxAutoOpenSettings.OnEvent("Click", (*) => this.TrackChange("AutoOpenSettings"))
         this.MainGui["AutoOpenSettings"].Value := Config.GetImportant("AutoOpenSettings")
         this.LaunchControls.Push(checkboxAutoOpenSettings)
+
+        ; 关闭窗口时退出
+        checkboxExitOnWindowClose := this.MainGui.Add("Checkbox", "xs y+10 h24 vExitOnWindowClose", " 点击关闭窗口按钮时退出小助手")
+        checkboxExitOnWindowClose.OnEvent("Click", (*) => this.TrackChange("ExitOnWindowClose"))
+        this.MainGui["ExitOnWindowClose"].Value := Config.GetImportant("ExitOnWindowClose")
+        this.LaunchControls.Push(checkboxExitOnWindowClose)
 
         ; 默认启动卫戍协议方案
         checkboxDefaultStrongHoldProtocol := this.MainGui.Add("Checkbox", "xs y+10 h24 vDefaultStrongHoldProtocol", " 默认启动卫戍协议方案")
@@ -724,7 +741,7 @@ class GuiManager {
             }
         }
         ; Important 设置
-        for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "AutoStartWithGame", "GamePath", "UpdateChannel", "UpdateSource", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
+        for key in this.GuiImportantKeys {
             try {
                 this._InitialValues[key] := this.MainGui[key].Value
             }
@@ -758,7 +775,7 @@ class GuiManager {
                         return
                 }
             }
-            for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "AutoStartWithGame", "GamePath", "UpdateChannel", "UpdateSource", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
+            for key in this.GuiImportantKeys {
                 try {
                     if (this.MainGui[key].Value != this._InitialValues[key])
                         return
