@@ -29,6 +29,14 @@ class Saver {
                 }
             }
         }
+
+        ; 在应用其他外部设置前，预检 GitHub Token 的 DPAPI 加密。
+        plainToken := SavedObj.HasProp("GitHubToken") ? SavedObj.GitHubToken : ""
+        tokenStorage := Config.PrepareGitHubTokenForStorage(plainToken)
+        if (!tokenStorage.success) {
+            MessageBox.Error("GitHub Token 无法安全保存：`n" tokenStorage.message, "设置保存失败")
+            Exit
+        }
         
         ; 验证游戏路径
         if (SavedObj.HasProp("GamePath") && SavedObj.GamePath != "") {
@@ -49,8 +57,53 @@ class Saver {
             }
         }
 
+        ; 应用“启动游戏时自动启动小助手”设置
+        if (!this._ApplyGameAutoStart(SavedObj)) {
+            Exit
+        }
+
         ; 保存到INI
-        Config.SaveToIni(SavedObj)
+        saveResult := Config.SaveToIni(SavedObj, tokenStorage)
+        if (!saveResult.success) {
+            MessageBox.Error(saveResult.message, "设置保存失败")
+            Exit
+        }
+    }
+
+    ; 应用随游戏自动启动配置。外部任务成功后才保存配置开关。
+    static _ApplyGameAutoStart(SavedObj) {
+        if (!SavedObj.HasProp("AutoStartWithGame"))
+            return true
+
+        enabled := (SavedObj.AutoStartWithGame = 1 || SavedObj.AutoStartWithGame = "1")
+        appliedGamePath := ""
+        if (enabled) {
+            validation := GameAutoStartManager.ValidateGamePath(SavedObj.GamePath)
+            if (!validation.success) {
+                MessageBox.Error(validation.message, "无法启用随游戏自动启动")
+                return false
+            }
+            ; 保存规范化后的绝对路径，确保后续启动校准使用同一事件过滤条件。
+            SavedObj.GamePath := validation.path
+            GuiManager.SetControlValue("GamePath", validation.path)
+            appliedGamePath := validation.path
+
+            if (Config.GetImportant("AutoStartWithGame") != "1") {
+                confirmationMessage := "启用此功能需要开启 Windows 的“进程创建成功审核”。`n"
+                confirmationMessage .= "Windows 将为进程启动记录安全日志；关闭此功能后，审核设置仍会保留。`n`n"
+                confirmationMessage .= "是否继续？"
+                result := MessageBox.Confirm(confirmationMessage, "启用随游戏自动启动")
+                if (result = "No")
+                    return false
+            }
+        }
+
+        result := GameAutoStartManager.Apply(enabled, appliedGamePath)
+        if (!result.success) {
+            MessageBox.Error(result.message, enabled ? "启用随游戏自动启动失败" : "关闭随游戏自动启动失败")
+            return false
+        }
+        return true
     }
 
     ; 内部：检查按键冲突

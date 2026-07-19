@@ -55,6 +55,8 @@ class GuiManager {
     static LastActiveTab := "keyBind"  ; 最后选中的功能性标签页（排除"其他设置"）
     static FrameSkipLabels := Map()     ; 过帧标签控件（用于动态更新文本）
     static FrameSkipDelayKeys := ["FrameSkip16msDelay", "FrameSkip33msDelay", "FrameSkip166msDelay"]
+    ; 具有对应 GUI 控件的 Important 设置；不直接遍历 Config.AllImportant，后者还包含内部字段
+    static GuiImportantKeys := ["Frame", "AutoExit", "AutoOpenSettings", "ExitOnWindowClose", "DefaultStrongHoldProtocol", "AutoRunGame", "AutoStartWithGame", "GamePath", "UpdateChannel", "UpdateSource", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"]
     
     ; 初始化GUI（单例模式）
     static Init() {
@@ -72,7 +74,7 @@ class GuiManager {
         this.MainGui.SetFont("s9", "Microsoft YaHei UI")
         hWnd := this.MainGui.Hwnd
         try DllCall("dwmapi\DwmSetWindowAttribute", "ptr", hWnd, "int", 38, "int*", true, "int", 4)
-        this.MainGui.OnEvent("Close", (*) => EventBus.Publish("SettingsCancel"))
+        this.MainGui.OnEvent("Close", (*) => this._HandleWindowClose())
         
         ; 创建控件
         this._CreateControls()
@@ -100,6 +102,15 @@ class GuiManager {
         if (Config.GetImportant("AutoOpenSettings") == "1") {
             this.Show()
         }
+    }
+
+    ; 处理设置窗口标题栏关闭按钮和 Alt+F4
+    static _HandleWindowClose(*) {
+        if (Config.GetImportant("ExitOnWindowClose") == "1") {
+            ExitApp()
+            return
+        }
+        EventBus.Publish("SettingsCancel")
     }
     
     ; 内部：创建所有控件
@@ -170,7 +181,7 @@ class GuiManager {
 
         ; 常规作战提示语
         this.MainGui.SetFont("s9 c1994d2")
-        hintKeybind1 := this.MainGui.Add("Text", "x0 yp+40 w" this.GuiWidth " Center", "请确保游戏内的按键为默认设置，点击输入框修改按键，使用【BACKSPACE/DELETE】清除按键")
+        hintKeybind1 := this.MainGui.Add("Text", "x0 yp+40 w" this.GuiWidth " Center", "点击输入框修改按键，使用【BACKSPACE/DELETE】清除按键")
         this.MainGui.SetFont("s9 c1994d2 bold")
         hintKeybind2 := this.MainGui.Add("Text", "x0 y+8 w" this.GuiWidth " Center", "为避免冲突，切换到此页面时“卫戍协议”按键将被禁用")
         this.MainGui.SetFont("s9 cDefault Norm")
@@ -341,17 +352,29 @@ class GuiManager {
         this.MainGui["AutoOpenSettings"].Value := Config.GetImportant("AutoOpenSettings")
         this.LaunchControls.Push(checkboxAutoOpenSettings)
 
+        ; 关闭窗口时退出
+        checkboxExitOnWindowClose := this.MainGui.Add("Checkbox", "xs y+10 h24 vExitOnWindowClose", " 点击关闭窗口按钮时退出小助手")
+        checkboxExitOnWindowClose.OnEvent("Click", (*) => this.TrackChange("ExitOnWindowClose"))
+        this.MainGui["ExitOnWindowClose"].Value := Config.GetImportant("ExitOnWindowClose")
+        this.LaunchControls.Push(checkboxExitOnWindowClose)
+
         ; 默认启动卫戍协议方案
         checkboxDefaultStrongHoldProtocol := this.MainGui.Add("Checkbox", "xs y+10 h24 vDefaultStrongHoldProtocol", " 默认启动卫戍协议方案")
         checkboxDefaultStrongHoldProtocol.OnEvent("Click", (*) => this.TrackChange("DefaultStrongHoldProtocol"))
         this.MainGui["DefaultStrongHoldProtocol"].Value := Config.GetImportant("DefaultStrongHoldProtocol")
         this.LaunchControls.Push(checkboxDefaultStrongHoldProtocol)
 
-        ; 自动启动游戏
-        checkboxAutoRunGame := this.MainGui.Add("Checkbox", "xs y+10 h24 vAutoRunGame", " 同时启动明日方舟")
+        ; 启动小助手时自动启动游戏
+        checkboxAutoRunGame := this.MainGui.Add("Checkbox", "xs y+10 h24 vAutoRunGame", " 启动小助手时同时启动明日方舟")
         checkboxAutoRunGame.OnEvent("Click", (*) => this.TrackChange("AutoRunGame"))
         this.MainGui["AutoRunGame"].Value := Config.GetImportant("AutoRunGame")
         this.LaunchControls.Push(checkboxAutoRunGame)
+
+        ; 启动游戏时自动启动小助手
+        checkboxAutoStartWithGame := this.MainGui.Add("Checkbox", "xs y+10 h24 vAutoStartWithGame", " 启动明日方舟时自动启动小助手")
+        checkboxAutoStartWithGame.OnEvent("Click", (*) => this.TrackChange("AutoStartWithGame"))
+        this.MainGui["AutoStartWithGame"].Value := Config.GetImportant("AutoStartWithGame")
+        this.LaunchControls.Push(checkboxAutoStartWithGame)
 
         ; 识别游戏路径
         this.BtnCheckGamePath := this.MainGui.Add("Button", "xs y+12 w" this.BtnW " h24", "识别游戏路径")
@@ -414,6 +437,7 @@ class GuiManager {
         editGithubToken.OnEvent("Change", (*) => this.TrackChange("GitHubToken"))
         this.SetEditDisabled(editGithubToken, checkboxUseGitHubToken.Value)
         this.HintGithubToken := this.MainGui.Add("Text", "xs y+6 c9c9c9c", "只要没有提示API配额超限，就不需要使用GitHub Token")
+        this._UpdateGitHubTokenHint()
         this.UpdateControls.Push(checkboxUseGitHubToken)
         this.UpdateControls.Push(editGithubToken)
         this.UpdateControls.Push(this.HintGithubToken)
@@ -554,6 +578,23 @@ class GuiManager {
                 } else {
                     this.MainGui[key].Value := value
                 }
+            }
+        }
+        this._UpdateGitHubTokenHint()
+    }
+
+    ; 内部：显示 Token 存储迁移或解密状态，不显示敏感数据。
+    static _UpdateGitHubTokenHint() {
+        try {
+            switch Config.TokenStorageStatus {
+                case "migration_failed":
+                    this.HintGithubToken.Text := "安全迁移失败，当前仍保留旧 Token；请重新保存设置后重试"
+                case "cleanup_failed":
+                    this.HintGithubToken.Text := "Token 已加密，但旧格式清理失败；请重新保存设置后重试"
+                case "decrypt_failed":
+                    this.HintGithubToken.Text := "Token 无法解密，可能来自其他 Windows 用户或电脑；请重新输入并保存"
+                default:
+                    this.HintGithubToken.Text := "只要没有提示API配额超限，就不需要使用GitHub Token"
             }
         }
     }
@@ -700,7 +741,7 @@ class GuiManager {
             }
         }
         ; Important 设置
-        for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "UpdateSource", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
+        for key in this.GuiImportantKeys {
             try {
                 this._InitialValues[key] := this.MainGui[key].Value
             }
@@ -734,7 +775,7 @@ class GuiManager {
                         return
                 }
             }
-            for key in ["Frame", "AutoExit", "AutoOpenSettings", "DefaultStrongHoldProtocol", "AutoRunGame", "GamePath", "UpdateChannel", "UpdateSource", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
+            for key in this.GuiImportantKeys {
                 try {
                     if (this.MainGui[key].Value != this._InitialValues[key])
                         return

@@ -113,7 +113,7 @@ class HotkeyController {
             if (hotkeyValue != "" && this.ActionCallbacks.Has(keyVar)) {
                 callback := this.ActionCallbacks[keyVar]
                 if (keyVar == "ReleasePause" && !InStr(hotkeyValue, "Wheel")) {
-                    if (hotkeyValue ~= "i)\b(E|Q|F|G|V|W|A|S|D|G|X|C|RButton|MButton|Space|Escape|Tab)\b$") {
+                    if (hotkeyValue ~= GameKeys.GetInterceptPattern()) {
                         Hotkey(hotkeyValue " Up", callback, "On")
                         HotkeyController.ActiveHotkeys.Set(hotkeyValue " Up", hotkeyValue " Up")
                     }
@@ -122,7 +122,7 @@ class HotkeyController {
                         HotkeyController.ActiveHotkeys.Set("~" hotkeyValue " Up", "~" hotkeyValue " Up")
                     }
                 } else {
-                    if (hotkeyValue ~= "i)\b(E|Q|F|G|V|W|A|S|D|G|X|C|RButton|MButton|Space|Escape|Tab)\b$") {
+                    if (hotkeyValue ~= GameKeys.GetInterceptPattern()) {
                         Hotkey(hotkeyValue, callback, "On")
                         HotkeyController.ActiveHotkeys.Set(hotkeyValue, hotkeyValue)
                     }
@@ -154,7 +154,7 @@ class HotkeyController {
             if (hotkeyValue != "" && this.ActionCallbacks.Has(keyVar)) {
                 callback := this.ActionCallbacks[keyVar]
                 if (keyVar == "ReleasePause" && !InStr(hotkeyValue, "Wheel")) {
-                    if (hotkeyValue ~= "i)\b(E|Q|F|G|V|W|A|S|D|G|X|C|RButton|MButton|Space|Escape|Tab)\b$") {
+                    if (hotkeyValue ~= GameKeys.GetInterceptPattern()) {
                         Hotkey(hotkeyValue " Up", callback, "On")
                         HotkeyController.ActiveHotkeys.Set(hotkeyValue " Up", hotkeyValue " Up")
                     }
@@ -163,7 +163,7 @@ class HotkeyController {
                         HotkeyController.ActiveHotkeys.Set("~" hotkeyValue " Up", "~" hotkeyValue " Up")
                     }
                 } else {
-                    if (hotkeyValue ~= "i)\b(E|Q|F|G|V|W|A|S|D|G|X|C|RButton|MButton|Space|Escape|Tab)\b$") {
+                    if (hotkeyValue ~= GameKeys.GetInterceptPattern()) {
                         Hotkey(hotkeyValue, callback, "On")
                         HotkeyController.ActiveHotkeys.Set(hotkeyValue, hotkeyValue)
                     }

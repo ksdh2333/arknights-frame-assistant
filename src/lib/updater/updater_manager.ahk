@@ -55,9 +55,16 @@ class Updater {
                     UpdateUI.ShowUpToDateDialog(checkResult.localVersion)
                 }
                 ; 清除已忽略版本记录（当前已是最新）
-                if (Config.GetImportant("LastDismissedVersion") != "") {
+                dismissedVersion := Config.GetImportant("LastDismissedVersion")
+                if (dismissedVersion != "") {
                     Config.SetImportant("LastDismissedVersion", "")
-                    Config.SaveAllToIni()
+                    saveResult := Config.SaveAllToIni()
+                    if (!saveResult.success) {
+                        ; 保存失败时恢复内存值，避免配置文件与当前状态不一致。
+                        Config.SetImportant("LastDismissedVersion", dismissedVersion)
+                        OutputDebug("[Updater] 清除已忽略版本记录失败：" saveResult.message)
+                        MessageBox.Warning("当前版本已是最新，但忽略版本记录未能清除：`n" saveResult.message, "配置未保存")
+                    }
                 }
 
             case "update_available":
@@ -246,10 +253,13 @@ class Updater {
     static HandleUpdateIgnored(data) {
         ; 记录忽略的版本号
         Config.SetImportant("LastDismissedVersion", data.remoteVersion)
-        Config.SaveAllToIni()
+        saveResult := Config.SaveAllToIni()
 
         ; 显示提示
-        MessageBox.Info("已忽略版本 " data.remoteVersion " 的更新提示。`n`n下次自动检查更新时将不再提示此版本。", "已忽略")
+        if (saveResult.success)
+            MessageBox.Info("已忽略版本 " data.remoteVersion " 的更新提示。`n`n下次自动检查更新时将不再提示此版本。", "已忽略")
+        else
+            MessageBox.Warning("已关闭本次更新提示，但忽略状态未能写入配置：`n" saveResult.message, "配置未保存")
     }
 
     ; 显示更新对话框

@@ -14,15 +14,27 @@ CoordMode "Mouse", "Client"
 DllCall("winmm\timeBeginPeriod", "UInt", 1)
 OnExit (*) => DllCall("winmm\timeEndPeriod", "UInt", 1)
 
+; 判断是否由游戏启动事件触发
+HasLaunchArgument(argument) {
+    for arg in A_Args {
+        if (StrLower(arg) = StrLower(argument))
+            return true
+    }
+    return false
+}
+
+startedByGameAutoStart := HasLaunchArgument("--game-autostart")
+
 ; 获取权限
 if not A_IsAdmin
 {
     try
     {
+        launchContextArgs := startedByGameAutoStart ? " --game-autostart" : ""
         if A_IsCompiled
-            Run '*RunAs "' A_ScriptFullPath '" /restart'
+            Run '*RunAs "' A_ScriptFullPath '" /restart' launchContextArgs
         else
-            Run '*RunAs "' A_AhkPath '" /restart "' A_ScriptFullPath '"'
+            Run '*RunAs "' A_AhkPath '" /restart "' A_ScriptFullPath '"' launchContextArgs
     }
     ExitApp
 }
@@ -32,14 +44,23 @@ if not A_IsAdmin
 ; 包含统一消息框
 #Include ./lib/message_box.ahk
 
+; 包含 GitHub Token 保护模块
+#Include ./lib/token_protector.ahk
+
 ; 包含配置管理
 #Include ./lib/config.ahk
+
+; 包含随游戏自动启动模块
+#Include ./lib/game_auto_start.ahk
 
 ; 包含事件总线
 #Include ./lib/eventbus.ahk
 
 ; 包含文件提取模块
 #Include ./lib/file_extractor.ahk
+
+; 包含游戏按键注册表识别
+#Include ./lib/game_keys.ahk
 
 ; 包含功能实现
 #Include ./lib/hotkey_actions.ahk
@@ -65,8 +86,24 @@ if not A_IsAdmin
 ; 加载设置
 Loader.LoadSettings()
 
+; 写入启动来源状态，并校准随游戏自动启动的 Windows 审核和计划任务
+State.StartedByGameAutoStart := startedByGameAutoStart
+autoStartResult := GameAutoStartManager.Reconcile()
+if (!autoStartResult.success) {
+    OutputDebug("[GameAutoStart] 启动时校准失败：" autoStartResult.message)
+    if (!State.StartedByGameAutoStart && Config.GetImportant("AutoStartWithGame") = "1")
+        MessageBox.Warning(autoStartResult.message, "随游戏自动启动校准失败")
+}
+
+; 关闭功能后若有遗留事件触发，只清理任务，不启动小助手主体
+if (State.StartedByGameAutoStart && Config.GetImportant("AutoStartWithGame") != "1")
+    ExitApp
+
 ; 确保嵌入文件已提取到 AppData
 FileExtractor.EnsureExtracted()
+
+; 初始化游戏按键识别（必须在 HotkeyOn 之前）
+GameKeys.Init()
 
 HotkeyController.HotkeyOn()
 
@@ -81,6 +118,10 @@ ChangelogChecker.CheckAndShow()
 ; 包含GUI
 #Include ./lib/gui.ahk
 #Include ./lib/updater/updater_ui.ahk
+
+tokenStorageWarning := Config.GetTokenStorageWarning()
+if (tokenStorageWarning != "")
+    MessageBox.Warning(tokenStorageWarning, "GitHub Token 存储提示")
 
 ; 触发应用启动事件（触发自动更新检查和游戏自动启动）
 EventBus.Publish("AppStarted")

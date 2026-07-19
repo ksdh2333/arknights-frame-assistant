@@ -63,6 +63,7 @@ class Constants {
     static ImportantNames := Map(
         "AutoExit", "自动退出",
         "AutoOpenSettings", "自动打开设置界面",
+        "ExitOnWindowClose", "关闭窗口时退出小助手",
         "Frame", "游戏内帧率设置（兼容旧版）",
         "Frame155", "游戏内帧率设置",
         "AutoUpdate", "自动检查更新",
@@ -73,6 +74,7 @@ class Constants {
         "GitHubToken", "GitHub Token",
         "GamePath", "游戏路径",
         "AutoRunGame", "随小助手自动启动明日方舟",
+        "AutoStartWithGame", "随明日方舟自动启动小助手",
         "DismissedChangelogVersion", "已忽略公告版本",
         "DefaultStrongHoldProtocol", "默认启动卫戍协议方案",
         "AutoBeginPause", "开局自动暂停"
@@ -95,6 +97,8 @@ class Config {
     static _ImportantSettings := Map()
     static _CustomSettings := Map()
     static _IsLoaded := false
+    static GITHUB_TOKEN_PROTECTED_KEY := "GitHubTokenProtected"
+    static TokenStorageStatus := "ok"
 
     ; 内部：默认按键设置
     static _DefaultHotkeys := Map(
@@ -140,6 +144,7 @@ class Config {
     static _DefaultImportant := Map(
         "AutoExit", "1",
         "AutoOpenSettings", "1",
+        "ExitOnWindowClose", "0",
         "Frame", "90",
         "Frame155", "",
         "AutoUpdate", "1",
@@ -150,6 +155,7 @@ class Config {
         "GitHubToken", "",
         "GamePath", "",
         "AutoRunGame", "0",
+        "AutoStartWithGame", "0",
         "LastLaunchedVersion", "",
         "DismissedChangelogVersion", "",
         "DefaultStrongHoldProtocol", "0",
@@ -200,13 +206,8 @@ class Config {
         else {
             for keyVar, defaultVal in this._DefaultImportant {
                 if (keyVar = "GitHubToken") {
-                    ; Token 需要解码
-                    encodedToken := IniRead(this.IniFile, "Main", keyVar, defaultVal)
-                    ; 调试输出（仅记录长度，不记录 Token 值）
-                    OutputDebug("[Config] Token 读取 - INI 中的值长度：" StrLen(encodedToken))
-                    decodedToken := this.DecodeToken(encodedToken)
-                    OutputDebug("[Config] Token 读取 - 解码后长度：" StrLen(decodedToken))
-                    this._ImportantSettings[keyVar] := decodedToken
+                    tokenValue := this._ReadGitHubToken()
+                    this._ImportantSettings[keyVar] := tokenValue
                 } else {
                     this._ImportantSettings[keyVar] := IniRead(this.IniFile, "Main", keyVar, defaultVal)
                 }
@@ -267,8 +268,121 @@ class Config {
             return
 
         if Constants.FrameOldIndexToText.Has(frameValue) {
-            IniWrite(Constants.FrameOldIndexToText[frameValue], this.IniFile, "Main", "Frame155")
-            ; 保留原Frame值给旧版本使用
+            try {
+                IniWrite(Constants.FrameOldIndexToText[frameValue], this.IniFile, "Main", "Frame155")
+                ; 保留原Frame值给旧版本使用
+            } catch Error as e {
+                OutputDebug("[Config] 帧率迁移写入失败：" e.Message)
+            }
+        }
+    }
+
+    ; 将旧版明文 Token 迁移到 DPAPI 加密键。
+    static MigrateGitHubToken() {
+        if this.IniFile = ""
+            this.InitPath()
+        if !FileExist(this.IniFile)
+            return true
+
+        protectedValue := IniRead(this.IniFile, "Main", this.GITHUB_TOKEN_PROTECTED_KEY, "")
+        legacyValue := IniRead(this.IniFile, "Main", "GitHubToken", "")
+
+        if (protectedValue != "") {
+            protectedResult := TokenProtector.Unprotect(protectedValue)
+            if (protectedResult.success && protectedResult.format = "protected") {
+                if (legacyValue != "") {
+                    try IniDelete(this.IniFile, "Main", "GitHubToken")
+                    catch Error as e {
+                        this._SetTokenStorageStatus("cleanup_failed")
+                        return false
+                    }
+                }
+                this._SetTokenStorageStatus("ok")
+                return true
+            }
+
+            ; 加密值损坏时，若仍有旧明文则尝试恢复并重新迁移。
+            if (legacyValue = "") {
+                this._SetTokenStorageStatus("decrypt_failed")
+                return false
+            }
+        }
+
+        if (legacyValue = "") {
+            if (protectedValue = "")
+                this._SetTokenStorageStatus("ok")
+            return true
+        }
+
+        protectedResult := TokenProtector.Protect(legacyValue)
+        if !protectedResult.success {
+            this._SetTokenStorageStatus("migration_failed")
+            return false
+        }
+
+        verification := TokenProtector.Unprotect(protectedResult.storedValue)
+        if (!verification.success || verification.plainText != legacyValue) {
+            this._SetTokenStorageStatus("migration_failed")
+            return false
+        }
+
+        try {
+            ; 先写入并校验新值，再删除旧明文，避免迁移中断造成数据丢失。
+            IniWrite(protectedResult.storedValue, this.IniFile, "Main", this.GITHUB_TOKEN_PROTECTED_KEY)
+            if (IniRead(this.IniFile, "Main", this.GITHUB_TOKEN_PROTECTED_KEY, "") != protectedResult.storedValue)
+                throw Error("加密 Token 写入校验失败。")
+            IniDelete(this.IniFile, "Main", "GitHubToken")
+            this._SetTokenStorageStatus("ok")
+            return true
+        } catch Error as e {
+            this._SetTokenStorageStatus("migration_failed")
+            return false
+        }
+    }
+
+    ; 读取 Token。配置层之外始终只返回内存中的明文。
+    static _ReadGitHubToken() {
+        protectedValue := IniRead(this.IniFile, "Main", this.GITHUB_TOKEN_PROTECTED_KEY, "")
+        if (protectedValue != "") {
+            result := TokenProtector.Unprotect(protectedValue)
+            if (result.success && result.format = "protected")
+                return result.plainText
+
+            if (IniRead(this.IniFile, "Main", "GitHubToken", "") = "") {
+                this._SetTokenStorageStatus("decrypt_failed")
+                return ""
+            }
+        }
+
+        legacyValue := IniRead(this.IniFile, "Main", "GitHubToken", "")
+        if (legacyValue != "")
+            return legacyValue
+        return ""
+    }
+
+    ; 保存前预生成密文，调用方可在产生其他外部副作用前完成失败检查。
+    static PrepareGitHubTokenForStorage(plainToken) {
+        ; 解密失败时禁止在外部设置变更前用空值覆盖仍可能可恢复的原加密配置。
+        if (this.TokenStorageStatus = "decrypt_failed" && plainToken = "")
+            return {success: false, message: "GitHub Token 无法解密。为避免覆盖原加密配置，请重新输入 Token 后再保存。"}
+        return TokenProtector.Protect(plainToken)
+    }
+
+    static _SetTokenStorageStatus(status) {
+        this.TokenStorageStatus := status
+    }
+
+    ; 获取面向用户的 Token 存储提示，不包含敏感数据。
+    static GetTokenStorageWarning() {
+        switch this.TokenStorageStatus {
+            case "migration_failed":
+                return "旧版 GitHub Token 未能完成加密迁移，原配置已保留。请恢复 Settings.ini 的写入权限后重启 AFA。"
+            case "cleanup_failed":
+                return "GitHub Token 已完成加密，但旧明文未能删除。请恢复 Settings.ini 的写入权限后重新保存设置。"
+            case "decrypt_failed":
+                return "GitHub Token 无法解密，可能来自其他 Windows 用户或电脑。请重新输入 Token 并保存。"
+            default:
+                return ""
         }
     }
 
@@ -288,13 +402,8 @@ class Config {
         ; 加载重要设置
         for keyVar, defaultVal in this._DefaultImportant {
             if (keyVar = "GitHubToken") {
-                ; Token 需要解码
-                encodedToken := IniRead(this.IniFile, "Main", keyVar, defaultVal)
-                ; 调试输出（仅记录长度，不记录 Token 值）
-                OutputDebug("[Config] Token 读取 - INI 中的值长度：" StrLen(encodedToken))
-                decodedToken := this.DecodeToken(encodedToken)
-                OutputDebug("[Config] Token 读取 - 解码后长度：" StrLen(decodedToken))
-                this._ImportantSettings[keyVar] := decodedToken
+                tokenValue := this._ReadGitHubToken()
+                this._ImportantSettings[keyVar] := tokenValue
             } else {
                 this._ImportantSettings[keyVar] := IniRead(this.IniFile, "Main", keyVar, defaultVal)
             }
@@ -322,14 +431,9 @@ class Config {
         
         ; 写入所有默认重要设置
         for keyVar, defaultVal in this._DefaultImportant {
-            if (keyVar = "GitHubToken") {
-                ; Token 需要编码存储，即使为空
-                encodedVal := this.EncodeToken(defaultVal)
-                OutputDebug("[Config] Token 写入 - 默认值长度：" StrLen(defaultVal) ", 编码后长度：" StrLen(encodedVal))
-                IniWrite(encodedVal, this.IniFile, "Main", keyVar)
-            } else {
-                IniWrite(defaultVal, this.IniFile, "Main", keyVar)
-            }
+            if (keyVar = "GitHubToken")
+                continue
+            IniWrite(defaultVal, this.IniFile, "Main", keyVar)
         }
         
         ; 写入所有默认按键设置
@@ -344,61 +448,95 @@ class Config {
     }
     
     ; 保存到配置文件
-    static SaveToIni(settingsMap) {
+    static SaveToIni(settingsMap, tokenStorage := "") {
         if this.IniFile = ""
             this.InitPath()
-        
-        ; 先删除整个Section以清理旧配置
-        try IniDelete(this.IniFile, "Hotkeys")
-        try IniDelete(this.IniFile, "Main")
-        try IniDelete(this.IniFile, "Custom")
-            
-        ; 保存按键设置
-        for keyVar, _ in Constants.KeyNames {
-            if this._HotkeySettings.Has(keyVar) {
-                IniWrite(this._HotkeySettings[keyVar], this.IniFile, "Hotkeys", keyVar)
+
+        targetIniFile := this.IniFile
+        tempIniFile := ""
+        Critical "On"
+        try {
+            requestedToken := settingsMap.HasProp("GitHubToken") ? settingsMap.GitHubToken : ""
+            ; 解密失败时禁止用空值覆盖仍可能可恢复的原加密配置。
+            if (this.TokenStorageStatus = "decrypt_failed" && requestedToken = "")
+                return {success: false, message: "GitHub Token 无法解密。为避免覆盖原加密配置，请重新输入 Token 后再保存。"}
+
+            if !IsObject(tokenStorage)
+                tokenStorage := this.PrepareGitHubTokenForStorage(requestedToken)
+            if !tokenStorage.success
+                return tokenStorage
+
+            ; 先在同目录临时文件中完成全部写入，成功后再替换正式配置。
+            tempIniFile := targetIniFile ".tmp-" A_TickCount "-" Random(1000, 9999)
+            if FileExist(targetIniFile)
+                FileCopy(targetIniFile, tempIniFile, true)
+            else {
+                tempHandle := FileOpen(tempIniFile, "w")
+                tempHandle.Close()
             }
-        }
-        
-        ; 保存重要设置
-        for keyVar, _ in Constants.ImportantNames {
-            if settingsMap.HasProp(keyVar) {
-                if (keyVar = "GitHubToken") {
-                    ; Token需要编码存储
-                    this.SetImportant(keyVar, this.EncodeToken(settingsMap.%keyVar%))
-                } else {
-                    this.SetImportant(keyVar, settingsMap.%keyVar%)
+            this.IniFile := tempIniFile
+
+            ; 只清理临时文件中的旧 Section，原配置在提交前保持不变。
+            try IniDelete(this.IniFile, "Hotkeys")
+            try IniDelete(this.IniFile, "Main")
+            try IniDelete(this.IniFile, "Custom")
+
+            ; 保存按键设置
+            for keyVar, _ in Constants.KeyNames {
+                if this._HotkeySettings.Has(keyVar) {
+                    IniWrite(this._HotkeySettings[keyVar], this.IniFile, "Hotkeys", keyVar)
                 }
             }
-        }
-        for keyVar, _ in Constants.ImportantNames {
-            if keyVar = "Frame155"
-                continue
-            if this._ImportantSettings.Has(keyVar) {
-                IniWrite(this._ImportantSettings[keyVar], this.IniFile, "Main", keyVar)
-            }
-        }
 
-        ; Frame双写兼容：Frame155存文本值，Frame存旧版索引
-        if this._ImportantSettings.Has("Frame") {
-            frameText := this._ImportantSettings["Frame"]
-            frameIndex := Constants.FrameTextToOldIndex.Has(frameText) ? Constants.FrameTextToOldIndex[frameText] : "3"
-            IniWrite(frameText, this.IniFile, "Main", "Frame155")
-            IniWrite(frameIndex, this.IniFile, "Main", "Frame")
-        }
+            ; 保存重要设置
+            for keyVar, _ in Constants.ImportantNames {
+                if settingsMap.HasProp(keyVar)
+                    this.SetImportant(keyVar, settingsMap.%keyVar%)
+            }
+            for keyVar, _ in Constants.ImportantNames {
+                if (keyVar = "Frame155" || keyVar = "GitHubToken")
+                    continue
+                if this._ImportantSettings.Has(keyVar) {
+                    IniWrite(this._ImportantSettings[keyVar], this.IniFile, "Main", keyVar)
+                }
+            }
 
-        ; 保存自定义设置
-        for keyVar, _ in Constants.CustomNames {
-            if (keyVar = "SwitchHotkey")
-                continue
-            if settingsMap.HasProp(keyVar) {
-                this.SetCustom(keyVar, settingsMap.%keyVar%)
+            if (tokenStorage.storedValue != "")
+                IniWrite(tokenStorage.storedValue, this.IniFile, "Main", this.GITHUB_TOKEN_PROTECTED_KEY)
+
+            ; Frame双写兼容：Frame155存文本值，Frame存旧版索引
+            if this._ImportantSettings.Has("Frame") {
+                frameText := this._ImportantSettings["Frame"]
+                frameIndex := Constants.FrameTextToOldIndex.Has(frameText) ? Constants.FrameTextToOldIndex[frameText] : "3"
+                IniWrite(frameText, this.IniFile, "Main", "Frame155")
+                IniWrite(frameIndex, this.IniFile, "Main", "Frame")
             }
-        }
-        for keyVar, _ in Constants.CustomNames {
-            if this._CustomSettings.Has(keyVar) {
-                IniWrite(this._CustomSettings[keyVar], this.IniFile, "Custom", keyVar)
+
+            ; 保存自定义设置
+            for keyVar, _ in Constants.CustomNames {
+                if (keyVar = "SwitchHotkey")
+                    continue
+                if settingsMap.HasProp(keyVar) {
+                    this.SetCustom(keyVar, settingsMap.%keyVar%)
+                }
             }
+            for keyVar, _ in Constants.CustomNames {
+                if this._CustomSettings.Has(keyVar) {
+                    IniWrite(this._CustomSettings[keyVar], this.IniFile, "Custom", keyVar)
+                }
+            }
+
+            this.IniFile := targetIniFile
+            this._CommitIniTemp(tempIniFile, targetIniFile)
+            tempIniFile := ""
+            return {success: true, message: ""}
+        } catch Error as e {
+            return {success: false, message: "配置文件写入失败：" e.Message}
+        } finally {
+            this.IniFile := targetIniFile
+            if (tempIniFile != "" && FileExist(tempIniFile))
+                try FileDelete(tempIniFile)
+            Critical "Off"
         }
     }
     
@@ -406,29 +544,83 @@ class Config {
     static SaveAllToIni() {
         if this.IniFile = ""
             this.InitPath()
-        
-        ; 先删除整个Section以清理旧配置
-        try IniDelete(this.IniFile, "Hotkeys")
-        try IniDelete(this.IniFile, "Main")
-        
-        ; 保存按键设置
-        for keyVar, value in this._HotkeySettings {
-            IniWrite(value, this.IniFile, "Hotkeys", keyVar)
-        }
-        
-        ; 保存重要设置
-        for keyVar, value in this._ImportantSettings {
-            if (keyVar = "GitHubToken") {
-                ; Token 需要编码存储
-                IniWrite(this.EncodeToken(value), this.IniFile, "Main", keyVar)
-            } else {
+
+        targetIniFile := this.IniFile
+        tempIniFile := ""
+        Critical "On"
+        try {
+            ; 非 GUI 保存同样不能在解密失败时用空值覆盖原加密配置。
+            if (this.TokenStorageStatus = "decrypt_failed" && this._ImportantSettings.Has("GitHubToken") && this._ImportantSettings["GitHubToken"] = "")
+                return {success: false, message: "GitHub Token 无法解密，已保留原加密配置。请重新输入 Token 后保存。"}
+
+            tokenStorage := this.PrepareGitHubTokenForStorage(this._ImportantSettings.Has("GitHubToken") ? this._ImportantSettings["GitHubToken"] : "")
+            if !tokenStorage.success
+                return tokenStorage
+
+            ; 先在同目录临时文件中完成全部写入，成功后再替换正式配置。
+            tempIniFile := targetIniFile ".tmp-" A_TickCount "-" Random(1000, 9999)
+            if FileExist(targetIniFile)
+                FileCopy(targetIniFile, tempIniFile, true)
+            else {
+                tempHandle := FileOpen(tempIniFile, "w")
+                tempHandle.Close()
+            }
+            this.IniFile := tempIniFile
+
+            ; 只清理临时文件中的旧 Section，原配置在提交前保持不变。
+            try IniDelete(this.IniFile, "Hotkeys")
+            try IniDelete(this.IniFile, "Main")
+
+            ; 保存按键设置
+            for keyVar, value in this._HotkeySettings {
+                IniWrite(value, this.IniFile, "Hotkeys", keyVar)
+            }
+
+            ; 保存重要设置
+            for keyVar, value in this._ImportantSettings {
+                if (keyVar = "GitHubToken")
+                    continue
                 IniWrite(value, this.IniFile, "Main", keyVar)
             }
+            if (tokenStorage.storedValue != "")
+                IniWrite(tokenStorage.storedValue, this.IniFile, "Main", this.GITHUB_TOKEN_PROTECTED_KEY)
+
+            ; 保存自定义设置
+            for keyVar, value in this._CustomSettings {
+                IniWrite(value, this.IniFile, "Custom", keyVar)
+            }
+
+            this.IniFile := targetIniFile
+            this._CommitIniTemp(tempIniFile, targetIniFile)
+            tempIniFile := ""
+            return {success: true, message: ""}
+        } catch Error as e {
+            return {success: false, message: "配置文件写入失败：" e.Message}
+        } finally {
+            this.IniFile := targetIniFile
+            if (tempIniFile != "" && FileExist(tempIniFile))
+                try FileDelete(tempIniFile)
+            Critical "Off"
+        }
+    }
+
+    ; 将已完整写入的临时配置文件替换为正式配置文件。
+    static _CommitIniTemp(tempIniFile, targetIniFile) {
+        if !FileExist(targetIniFile) {
+            FileMove(tempIniFile, targetIniFile, true)
+            return
         }
 
-        ; 保存自定义设置
-        for keyVar, value in this._CustomSettings {
-            IniWrite(value, this.IniFile, "Custom", keyVar)
+        if !DllCall("Kernel32\ReplaceFileW"
+            , "Str", targetIniFile
+            , "Str", tempIniFile
+            , "Ptr", 0
+            , "UInt", 0x1 ; REPLACEFILE_WRITE_THROUGH
+            , "Ptr", 0
+            , "Ptr", 0
+            , "Int") {
+            errorCode := A_LastError
+            throw Error("配置文件替换失败，错误码：" errorCode)
         }
     }
     
@@ -455,23 +647,15 @@ class Config {
     ; 获取所有自定义设置（用于遍历）
     static AllCustom => this._CustomSettings
     
-    ; -- Token存储方法 --
-    
-    ; 编码Token（直接返回原文，不编码）
-    static EncodeToken(plainToken) {
-        return plainToken  ; 直接返回原文
-    }
-    
-    ; 解码Token（直接返回原文，不解码）
-    static DecodeToken(encodedToken) {
-        return encodedToken  ; 直接返回原文
-    }
 }
 
 ; -- 状态管理 --
 class State {
     ; 游戏状态
     static GameHasStarted := false
+
+    ; 是否由游戏进程创建事件触发启动
+    static StartedByGameAutoStart := false
     
     ; 当前延迟值
     static CurrentDelay := 11.3  ; 默认120帧
