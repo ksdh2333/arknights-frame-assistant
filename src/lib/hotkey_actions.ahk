@@ -11,17 +11,13 @@ ActionPressPause(ThisHotkey) {
 }
 ; 松开暂停
 ActionReleasePause(ThisHotkey) {
-    Send "{Space Down}"
-    USleep(50)
-    Send "{Space Up}"
+    GameKeys.Tap("pauseBattle")
 }
 ; 切换倍速
 ActionGameSpeed(ThisHotkey) {
-    Send "{f Down}"
-    Send "{g Down}"
+    GameKeys.SendDown("changeSpeed")
     USleep(50)
-    Send "{f Up}"
-    Send "{g Up}"
+    GameKeys.SendUp("changeSpeed")
     if InStr(ThisHotkey, "Wheel")
         return
     PureKeyWait(ThisHotkey)
@@ -36,10 +32,10 @@ Action16ms(ThisHotkey) {
     delay := Integer(Config.GetCustom("FrameSkip16msDelay"))
     Send "{ESC Down}"
     USleep(delay)
-    Send "{Space Down}"
+    GameKeys.SendDown("pauseBattle")
     USleep(50)
     Send "{ESC Up}"
-    Send "{Space Up}"
+    GameKeys.SendUp("pauseBattle")
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
@@ -57,10 +53,10 @@ Action33ms(ThisHotkey) {
     delay := Integer(Config.GetCustom("FrameSkip33msDelay"))
     Send "{ESC Down}"
     USleep(delay)
-    Send "{Space Down}"
+    GameKeys.SendDown("pauseBattle")
     USleep(50)
     Send "{ESC Up}"
-    Send "{Space Up}"
+    GameKeys.SendUp("pauseBattle")
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
@@ -78,10 +74,10 @@ Action166ms(ThisHotkey) {
     delay := Integer(Config.GetCustom("FrameSkip166msDelay"))
     Send "{ESC Down}"
     USleep(delay)
-    Send "{Space Down}"
+    GameKeys.SendDown("pauseBattle")
     USleep(50)
     Send "{ESC Up}"
-    Send "{Space Up}"
+    GameKeys.SendUp("pauseBattle")
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
@@ -112,20 +108,16 @@ ActionPauseSelect(ThisHotkey) {
     PureKeyWait(ThisHotkey)
     try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
 }
-; 干员技能
+; 发送技能键
 ActionSkill(ThisHotkey) {
-    Send "{e Down}"
-    USleep(50)
-    Send "{e Up}"
+    GameKeys.Tap("releaseSkill")
     if InStr(ThisHotkey, "Wheel")
         return
     PureKeyWait(ThisHotkey)
 }
-; 干员撤退
+; 发送撤退键
 ActionRetreat(ThisHotkey) {
-    Send "{q Down}"
-    USleep(50)
-    Send "{q Up}"
+    GameKeys.Tap("retreatChar")
     if InStr(ThisHotkey, "Wheel")
         return
     PureKeyWait(ThisHotkey)
@@ -140,9 +132,7 @@ ActionOneClickSkill(ThisHotkey) {
     Send "{LButton Down}"
     Send "{LButton Up}"
     USleep(State.ClickDelay)
-    Send "{e Down}"
-    USleep(50)
-    Send "{e Up}"
+    GameKeys.Tap("releaseSkill")
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
@@ -160,9 +150,7 @@ ActionOneClickRetreat(ThisHotkey) {
     Send "{LButton Down}"
     Send "{LButton Up}"
     USleep(State.ClickDelay)
-    Send "{q Down}"
-    USleep(50)
-    Send "{q Up}"
+    GameKeys.Tap("retreatChar")
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
@@ -184,12 +172,12 @@ ActionPauseSkill(ThisHotkey) {
     TouchInjector.Tap(xpos, ypos)
     TouchInjector.Tap(PosR.PBRX, PosR.PBRY)
     USleep(State.ClickDelay)
-    Send "{e Down}"
+    GameKeys.SendDown("releaseSkill")
     USleep(Max(State.CurrentDelay * 1.5 - State.ClickDelay, 0))
     TouchInjector.Move(xpos, ypos)
     MouseMove xpos, ypos
     USleep(50)
-    Send "{e Up}"
+    GameKeys.SendUp("releaseSkill")
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
@@ -211,12 +199,12 @@ ActionPauseRetreat(ThisHotkey) {
     TouchInjector.Tap(xpos, ypos)
     TouchInjector.Tap(PosR.PBRX, PosR.PBRY)
     USleep(State.ClickDelay)
-    Send "{q Down}"
+    GameKeys.SendDown("retreatChar")
     USleep(Max(State.CurrentDelay * 1.5 - State.ClickDelay, 0))
     TouchInjector.Move(xpos, ypos)
     MouseMove xpos, ypos
     USleep(50)
-    Send "{q Up}"
+    GameKeys.SendUp("retreatChar")
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
@@ -337,10 +325,10 @@ ActionLButtonClick(ThisHotkey) {
 }
 ; 放弃行动
 ActionCeaseOperations(ThisHotkey) {
-    Send "{v Down}"
+    GameKeys.SendDown("battleLeftPopup")
     Send "{ESC Down}"
     USleep(50)
-    Send "{v Up}"
+    GameKeys.SendUp("battleLeftPopup")
     Send "{ESC Up}"
     if InStr(ThisHotkey, "Wheel")
         return
@@ -372,10 +360,10 @@ ActionSkip(ThisHotkey) {
 }
 ; 返回上级菜单
 ActionBack(ThisHotkey) {
-    Send "{v Down}"
+    GameKeys.SendDown("battleLeftPopup")
     Send "{ESC Down}"
     USleep(50)
-    Send "{v Up}"
+    GameKeys.SendUp("battleLeftPopup")
     Send "{ESC Up}"
     if InStr(ThisHotkey, "Wheel")
         return
@@ -502,63 +490,49 @@ ActionCollectCollectibles(ThisHotkey) {
 ; -- 卫戍协议 --
 ; 查看敌人
 ActionCheckEnemies(ThisHotkey) {
-    Send "{w Down}"
-    USleep(50)
-    Send "{w Up}"
+    GameKeys.Tap("autochessViewEnemy")
     if InStr(ThisHotkey, "Wheel")
         return
     PureKeyWait(ThisHotkey)
 }
 ; 调度中心
 ActionDispatchCenter(ThisHotkey) {
-    Send "{a Down}"
-    USleep(50)
-    Send "{a Up}"
+    GameKeys.Tap("autochessShop")
     if InStr(ThisHotkey, "Wheel")
         return
     PureKeyWait(ThisHotkey)
 }
 ; 冻结
 ActionFreeze(ThisHotkey) {
-    Send "{s Down}"
-    USleep(50)
-    Send "{s Up}"
+    GameKeys.Tap("autochessFreeze")
     if InStr(ThisHotkey, "Wheel")
         return
     PureKeyWait(ThisHotkey)
 }
 ; 刷新
 ActionRefresh(ThisHotkey) {
-    Send "{d Down}"
-    USleep(50)
-    Send "{d Up}"
+    GameKeys.Tap("autochessRefresh")
     if InStr(ThisHotkey, "Wheel")
         return
     PureKeyWait(ThisHotkey)
 }
 ; 升级
 ActionUpgrade(ThisHotkey) {
-    Send "{g Down}"
-    USleep(50)
-    Send "{g Up}"
+    GameKeys.Tap("autochessLevelUp")
     if InStr(ThisHotkey, "Wheel")
         return
     PureKeyWait(ThisHotkey)
 }
 ; 出售/销毁
 ActionSell(ThisHotkey) {
-    Send "{x Down}"
-    USleep(50)
-    Send "{x Up}"
+    GameKeys.Tap("autochessSale")
     if InStr(ThisHotkey, "Wheel")
         return
     PureKeyWait(ThisHotkey)
 }
 ; 准备就绪
 ActionReady(ThisHotkey) {
-    Send "{c Down}"
-    USleep(50)
-    Send "{c Up}"
+    GameKeys.Tap("autochessReady")
     if InStr(ThisHotkey, "Wheel")
         return
     PureKeyWait(ThisHotkey)
@@ -573,9 +547,7 @@ ActionOneClickSell(ThisHotkey) {
     Send "{LButton Down}"
     Send "{LButton Up}"
     USleep(State.ClickDelay)
-    Send "{x Down}"
-    USleep(50)
-    Send "{x Up}"
+    GameKeys.Tap("autochessSale")
     if InStr(ThisHotkey, "Wheel") {
         try DllCall("SetThreadDpiAwarenessContext", "ptr", oldCtx, "ptr")
         return
