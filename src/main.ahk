@@ -59,6 +59,9 @@ if not A_IsAdmin
 ; 包含文件提取模块
 #Include ./lib/file_extractor.ahk
 
+; 包含游戏按键注册表识别
+#Include ./lib/game_keys.ahk
+
 ; 包含功能实现
 #Include ./lib/hotkey_actions.ahk
 
@@ -98,6 +101,9 @@ if (State.StartedByGameAutoStart && Config.GetImportant("AutoStartWithGame") != 
 
 ; 确保嵌入文件已提取到 AppData
 FileExtractor.EnsureExtracted()
+
+; 初始化游戏按键识别（必须在 HotkeyOn 之前）
+GameKeys.Init()
 
 HotkeyController.HotkeyOn()
 

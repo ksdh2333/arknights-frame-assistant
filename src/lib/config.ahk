@@ -206,9 +206,7 @@ class Config {
         else {
             for keyVar, defaultVal in this._DefaultImportant {
                 if (keyVar = "GitHubToken") {
-                    ; 调试输出（仅记录长度，不记录 Token 值）
                     tokenValue := this._ReadGitHubToken()
-                    OutputDebug("[Config] Token 读取 - 内存值长度：" StrLen(tokenValue))
                     this._ImportantSettings[keyVar] := tokenValue
                 } else {
                     this._ImportantSettings[keyVar] := IniRead(this.IniFile, "Main", keyVar, defaultVal)
@@ -404,9 +402,7 @@ class Config {
         ; 加载重要设置
         for keyVar, defaultVal in this._DefaultImportant {
             if (keyVar = "GitHubToken") {
-                ; 调试输出（仅记录长度，不记录 Token 值）
                 tokenValue := this._ReadGitHubToken()
-                OutputDebug("[Config] Token 读取 - 内存值长度：" StrLen(tokenValue))
                 this._ImportantSettings[keyVar] := tokenValue
             } else {
                 this._ImportantSettings[keyVar] := IniRead(this.IniFile, "Main", keyVar, defaultVal)
