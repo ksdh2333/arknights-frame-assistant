@@ -63,6 +63,7 @@ class Constants {
     static ImportantNames := Map(
         "AutoExit", "自动退出",
         "AutoOpenSettings", "自动打开设置界面",
+        "ExitOnWindowClose", "关闭窗口时退出小助手",
         "Frame", "游戏内帧率设置（兼容旧版）",
         "Frame155", "游戏内帧率设置",
         "AutoUpdate", "自动检查更新",
@@ -143,6 +144,7 @@ class Config {
     static _DefaultImportant := Map(
         "AutoExit", "1",
         "AutoOpenSettings", "1",
+        "ExitOnWindowClose", "0",
         "Frame", "90",
         "Frame155", "",
         "AutoUpdate", "1",
