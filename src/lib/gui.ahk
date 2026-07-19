@@ -243,7 +243,7 @@ class GuiManager {
 
         ; 快捷操作提示语
         this.MainGui.SetFont("s9 c1994d2")
-        hintQuick1 := this.MainGui.Add("Text", "x0 yp+40 w" this.GuiWidth " Center", "请确保游戏内的按键为默认设置，点击输入框修改按键，使用【BACKSPACE/DELETE】清除按键")
+        hintQuick1 := this.MainGui.Add("Text", "x0 yp+40 w" this.GuiWidth " Center", "点击输入框修改按键，使用【BACKSPACE/DELETE】清除按键")
         ; hintQuick2 := this.MainGui.Add("Text", "x0 y+8 w" this.GuiWidth " Center", "“放弃行动”为模拟按下 ESC 和 V 的功能；“返回上级菜单”为模拟左键点击返回按钮的功能，兼容肉鸽编队等 ESC 键不便捷的界面")
         this.MainGui.SetFont("s9 c1994d2 bold")
         hintQuick3 := this.MainGui.Add("Text", "x0 y+8 w" this.GuiWidth " Center", "为避免冲突，切换到此页面时“卫戍协议”按键将被禁用")
@@ -281,7 +281,7 @@ class GuiManager {
 
         ; 卫戍协议提示语
         this.MainGui.SetFont("s9 c1994d2")
-        hintStrongHoldProtocol1 := this.MainGui.Add("Text", "x0 yp+40 w" this.GuiWidth " Center", "请确保游戏内的卫戍协议按键为默认设置，点击输入框修改按键，使用【BACKSPACE/DELETE】清除按键")
+        hintStrongHoldProtocol1 := this.MainGui.Add("Text", "x0 yp+40 w" this.GuiWidth " Center", "点击输入框修改按键，使用【BACKSPACE/DELETE】清除按键")
         this.MainGui.SetFont("s9 c1994d2 bold")
         hintStrongHoldProtocol2 := this.MainGui.Add("Text", "x0 y+8 w" this.GuiWidth " Center", "为避免冲突，切换到此页面时“常规作战”、“快捷操作”按键将被禁用")
         this.MainGui.SetFont("s9 cDefault Norm")
