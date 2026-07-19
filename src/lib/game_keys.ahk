@@ -72,7 +72,7 @@ class GameKeys {
         seen := Map()
         for _, key in this._Bindings {
             if (key != "" && !seen.Has(key)) {
-                keys .= key . "|"
+                keys .= this._EscapeRegex(key) . "|"
                 seen[key] := true
             }
         }
@@ -379,6 +379,11 @@ class GameKeys {
         return result
     }
 
+    ; ── 转义正则特殊字符（用于 GetInterceptPattern） ──
+    static _EscapeRegex(str) {
+        return RegExReplace(str, "[.^$*+?()[{\\|]", "\$0")
+    }
+
     ; ── 转换 Unity keyId → AHK 键名 ──
     static _ConvertKeyId(keyId) {
         ; 1. 精确匹配
@@ -482,12 +487,16 @@ class GameKeys {
             jsonStr := StrGet(buf, bufSize, "UTF-8")
             if (jsonStr = "") {
                 OutputDebug("[GameKeys] 轮询：hex→文本转换失败")
+                this._LastHex := hexStr  ; 标记已处理，避免重复解析
                 return
             }
 
             newBindings := this._ParseJson(jsonStr)
-            if (newBindings.Count = 0)
+            if (newBindings.Count = 0) {
+                OutputDebug("[GameKeys] 轮询：JSON 解析结果为空")
+                this._LastHex := hexStr  ; 标记已处理，避免重复解析
                 return
+            }
 
             ; 更新绑定
             this._Bindings := newBindings
