@@ -29,6 +29,14 @@ class Saver {
                 }
             }
         }
+
+        ; 在应用其他外部设置前，预检 GitHub Token 的 DPAPI 加密。
+        plainToken := SavedObj.HasProp("GitHubToken") ? SavedObj.GitHubToken : ""
+        tokenStorage := Config.PrepareGitHubTokenForStorage(plainToken)
+        if (!tokenStorage.success) {
+            MessageBox.Error("GitHub Token 无法安全保存：`n" tokenStorage.message, "设置保存失败")
+            Exit
+        }
         
         ; 验证游戏路径
         if (SavedObj.HasProp("GamePath") && SavedObj.GamePath != "") {
@@ -55,7 +63,11 @@ class Saver {
         }
 
         ; 保存到INI
-        Config.SaveToIni(SavedObj)
+        saveResult := Config.SaveToIni(SavedObj, tokenStorage)
+        if (!saveResult.success) {
+            MessageBox.Error(saveResult.message, "设置保存失败")
+            Exit
+        }
     }
 
     ; 应用随游戏自动启动配置。外部任务成功后才保存配置开关。

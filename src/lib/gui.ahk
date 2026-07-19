@@ -420,6 +420,7 @@ class GuiManager {
         editGithubToken.OnEvent("Change", (*) => this.TrackChange("GitHubToken"))
         this.SetEditDisabled(editGithubToken, checkboxUseGitHubToken.Value)
         this.HintGithubToken := this.MainGui.Add("Text", "xs y+6 c9c9c9c", "只要没有提示API配额超限，就不需要使用GitHub Token")
+        this._UpdateGitHubTokenHint()
         this.UpdateControls.Push(checkboxUseGitHubToken)
         this.UpdateControls.Push(editGithubToken)
         this.UpdateControls.Push(this.HintGithubToken)
@@ -560,6 +561,23 @@ class GuiManager {
                 } else {
                     this.MainGui[key].Value := value
                 }
+            }
+        }
+        this._UpdateGitHubTokenHint()
+    }
+
+    ; 内部：显示 Token 存储迁移或解密状态，不显示敏感数据。
+    static _UpdateGitHubTokenHint() {
+        try {
+            switch Config.TokenStorageStatus {
+                case "migration_failed":
+                    this.HintGithubToken.Text := "安全迁移失败，当前仍保留旧 Token；请重新保存设置后重试"
+                case "cleanup_failed":
+                    this.HintGithubToken.Text := "Token 已加密，但旧格式清理失败；请重新保存设置后重试"
+                case "decrypt_failed":
+                    this.HintGithubToken.Text := "Token 无法解密，可能来自其他 Windows 用户或电脑；请重新输入并保存"
+                default:
+                    this.HintGithubToken.Text := "只要没有提示API配额超限，就不需要使用GitHub Token"
             }
         }
     }
