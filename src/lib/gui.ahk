@@ -55,6 +55,8 @@ class GuiManager {
     static LastActiveTab := "keyBind"  ; 最后选中的功能性标签页（排除"其他设置"）
     static FrameSkipLabels := Map()     ; 过帧标签控件（用于动态更新文本）
     static FrameSkipDelayKeys := ["FrameSkip16msDelay", "FrameSkip33msDelay", "FrameSkip166msDelay"]
+    ; 具有对应 GUI 控件的 Important 设置；不直接遍历 Config.AllImportant，后者还包含内部字段
+    static GuiImportantKeys := ["Frame", "AutoExit", "AutoOpenSettings", "ExitOnWindowClose", "DefaultStrongHoldProtocol", "AutoRunGame", "AutoStartWithGame", "GamePath", "UpdateChannel", "UpdateSource", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"]
     
     ; 初始化GUI（单例模式）
     static Init() {
@@ -739,7 +741,7 @@ class GuiManager {
             }
         }
         ; Important 设置
-        for key in ["Frame", "AutoExit", "AutoOpenSettings", "ExitOnWindowClose", "DefaultStrongHoldProtocol", "AutoRunGame", "AutoStartWithGame", "GamePath", "UpdateChannel", "UpdateSource", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
+        for key in this.GuiImportantKeys {
             try {
                 this._InitialValues[key] := this.MainGui[key].Value
             }
@@ -773,7 +775,7 @@ class GuiManager {
                         return
                 }
             }
-            for key in ["Frame", "AutoExit", "AutoOpenSettings", "ExitOnWindowClose", "DefaultStrongHoldProtocol", "AutoRunGame", "AutoStartWithGame", "GamePath", "UpdateChannel", "UpdateSource", "AutoUpdate", "UseGitHubToken", "GitHubToken", "AutoBeginPause"] {
+            for key in this.GuiImportantKeys {
                 try {
                     if (this.MainGui[key].Value != this._InitialValues[key])
                         return
